@@ -138,7 +138,7 @@ export default function ResumesPage() {
             {resumes.map((resume, idx) => (
               <div
                 key={resume._id || idx}
-                className="p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition flex flex-col justify-between group shadow-xs"
+                className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 transition flex flex-col justify-between group shadow-xs"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-3">
