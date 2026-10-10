@@ -858,20 +858,35 @@ export default function StudentDashboard({ onNavigate }) {
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  {mockTests.slice(0, 3).map((test, idx) => (
-                    <div key={test._id || idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
-                      <div>
-                        <h4 className="font-bold text-xs text-slate-900 dark:text-white">{test.title || 'Technical Assessment'}</h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Category: <span className="text-slate-700 dark:text-slate-300 font-medium">{test.category}</span>
-                        </p>
+                  {mockTests.slice(0, 3).map((test, idx) => {
+                    const scoreVal = test.percentage !== undefined && test.percentage !== null ? test.percentage : (test.score ?? 0);
+                    const isPassed = scoreVal >= 70;
+                    return (
+                      <div key={test.id || test._id || idx} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-extrabold text-xs flex items-center justify-center shrink-0">
+                            {(test.company_name || test.title || 'T').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-xs text-slate-900 dark:text-white">{test.title || 'Technical Assessment'}</h4>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                              <span className="text-blue-600 dark:text-blue-400 font-medium">{test.company_name || 'General Assessment'}</span>
+                              <span>•</span>
+                              <span className="capitalize">{test.category || 'technical'}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-xs font-extrabold ${isPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {scoreVal}%
+                          </span>
+                          <span className={`block text-[9px] font-bold uppercase ${isPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {isPassed ? 'Passed' : 'Practice'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">{test.score}%</span>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase">Score</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

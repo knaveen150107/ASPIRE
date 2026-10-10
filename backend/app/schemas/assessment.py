@@ -35,7 +35,17 @@ class TestQuestionPublicResponse(BaseModel):
 class MockTestCreate(BaseModel):
     job_id: Optional[str] = None
     title: str = Field(min_length=1)
-    difficulty: str = Field(pattern="^(beginner|intermediate|advanced|mixed)$", default="intermediate")
+    company_name: Optional[str] = None
+    category: Optional[str] = "technical"
+    difficulty: str = Field(pattern="^(beginner|intermediate|advanced|mixed|standard|medium|hard|easy)$", default="intermediate")
+    total_questions: Optional[int] = 0
+    score: Optional[float] = None
+    percentage: Optional[float] = None
+    correct_count: Optional[int] = None
+    topic_scores: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None
+    detailed_feedback: Optional[List[Dict[str, Any]]] = None
+    ai_feedback: Optional[str] = None
+    status: Optional[str] = "completed"
     questions: Optional[List[TestQuestionCreate]] = None
 
 
@@ -44,8 +54,17 @@ class MockTestResponse(BaseModel):
     student_id: str
     job_id: Optional[str] = None
     title: str
-    difficulty: str
-    status: str
+    company_name: Optional[str] = None
+    category: Optional[str] = "technical"
+    difficulty: str = "intermediate"
+    status: str = "completed"
+    score: Optional[float] = None
+    percentage: Optional[float] = None
+    correct_count: Optional[int] = None
+    total_questions: Optional[int] = 0
+    topic_scores: Optional[Any] = None
+    detailed_feedback: Optional[Any] = None
+    ai_feedback: Optional[str] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     created_at: datetime

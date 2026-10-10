@@ -195,6 +195,13 @@ class ApiClient {
     return res.data;
   }
 
+  async triggerAiJobDiscovery(force = true) {
+    const res = await this.request(`/jobs/ai-discover?force=${force}`, {
+      method: 'POST',
+    });
+    return res.data;
+  }
+
   // --- Skills ---
   async getSkills(category, search) {
     const params = new URLSearchParams();
@@ -260,6 +267,13 @@ class ApiClient {
 
   async getMockTestResult(testId) {
     const res = await this.request(`/mock-tests/${testId}/result`);
+    return res.data;
+  }
+
+  async deleteMockTest(testId) {
+    const res = await this.request(`/mock-tests/${testId}`, {
+      method: 'DELETE',
+    });
     return res.data;
   }
 

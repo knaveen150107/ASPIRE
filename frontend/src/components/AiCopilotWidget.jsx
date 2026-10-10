@@ -21,6 +21,110 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
+// Helper for clean typography & inline markdown parsing
+const formatInlineText = (text) => {
+  if (!text) return '';
+  const parts = [];
+  const regex = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*]+\*)/g;
+  let lastIdx = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      parts.push(text.substring(lastIdx, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith('**') && token.endsWith('**')) {
+      parts.push(
+        <strong key={match.index} className="font-bold text-slate-900 dark:text-white">
+          {token.slice(2, -2)}
+        </strong>
+      );
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      parts.push(
+        <code key={match.index} className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-mono text-[11px] font-semibold border border-slate-200 dark:border-slate-700">
+          {token.slice(1, -1)}
+        </code>
+      );
+    } else if (token.startsWith('*') && token.endsWith('*')) {
+      parts.push(
+        <em key={match.index} className="italic text-slate-700 dark:text-slate-300">
+          {token.slice(1, -1)}
+        </em>
+      );
+    }
+    lastIdx = regex.lastIndex;
+  }
+
+  if (lastIdx < text.length) {
+    parts.push(text.substring(lastIdx));
+  }
+
+  return parts.length > 0 ? parts : text;
+};
+
+const renderFormattedMessage = (rawText) => {
+  if (!rawText) return null;
+
+  // Clean stray punctuation artifacts like ", ." or ",,"
+  const cleanText = rawText
+    .replace(/,\s*[,;]+/g, ', ')
+    .replace(/\.\s*\.+/g, '.')
+    .replace(/,\s*\./g, '.')
+    .replace(/\s+([,\.!\?:;])/g, '$1')
+    .trim();
+
+  const lines = cleanText.split('\n');
+
+  return (
+    <div className="space-y-1.5 leading-relaxed text-xs">
+      {lines.map((line, lIdx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={lIdx} className="h-1" />;
+        }
+
+        if (trimmed.startsWith('### ') || trimmed.startsWith('## ')) {
+          const headerText = trimmed.replace(/^#+\s*/, '');
+          return (
+            <h4 key={lIdx} className="font-extrabold text-[12px] text-slate-900 dark:text-white pt-1">
+              {formatInlineText(headerText)}
+            </h4>
+          );
+        }
+
+        if (/^[-*•]\s+/.test(trimmed)) {
+          const bulletText = trimmed.replace(/^[-*•]\s+/, '');
+          return (
+            <div key={lIdx} className="flex items-start gap-1.5 pl-1">
+              <span className="text-blue-500 font-bold text-xs mt-0.5">•</span>
+              <span className="flex-1">{formatInlineText(bulletText)}</span>
+            </div>
+          );
+        }
+
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+        if (numMatch) {
+          return (
+            <div key={lIdx} className="flex items-start gap-1.5 pl-1">
+              <span className="font-bold text-blue-600 dark:text-blue-400 shrink-0 text-[11px] mt-0.5">
+                {numMatch[1]}.
+              </span>
+              <span className="flex-1">{formatInlineText(numMatch[2])}</span>
+            </div>
+          );
+        }
+
+        return (
+          <p key={lIdx} className="break-words">
+            {formatInlineText(trimmed)}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
 export const AiCopilotWidget = ({ onNavigate }) => {
   const { user, role, isAuthenticated } = useAuth();
   const toast = useToast();
@@ -139,9 +243,6 @@ export const AiCopilotWidget = ({ onNavigate }) => {
               <div>
                 <div className="flex items-center gap-1.5">
                   <h3 className="text-sm font-bold tracking-tight text-white">ASPIRE Copilot</h3>
-                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                    Live
-                  </span>
                 </div>
                 <p className="text-[10px] text-slate-400">
                   {aiStatus?.gemini_key_configured ? 'Google Gemini 3.6 Flash Active' : 'Placement Intelligence Engine'}
@@ -177,8 +278,8 @@ export const AiCopilotWidget = ({ onNavigate }) => {
                       : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-xs shadow-xs'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap font-sans text-xs">
-                    {msg.content}
+                  <div>
+                    {renderFormattedMessage(msg.content)}
                   </div>
 
                   {/* Suggested Prompts Buttons */}

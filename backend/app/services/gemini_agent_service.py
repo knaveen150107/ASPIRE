@@ -13,8 +13,9 @@ Provides multi-agent capabilities for:
 import json
 import logging
 import os
+import random
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from bson import ObjectId
 
@@ -38,7 +39,7 @@ class GeminiAgentService:
     def __init__(self, api_key: Optional[str] = None):
         self._override_key: Optional[str] = api_key
         self._client: Optional[Any] = None
-        self._model = settings.GEMINI_MODEL or "gemini-flash-latest"
+        self._model = settings.GEMINI_MODEL or "gemini-3.5-flash-lite"
 
     @property
     def api_key(self) -> str:
@@ -66,15 +67,29 @@ class GeminiAgentService:
                 return None
         return self._client
 
+    def _clean_text_response(self, text: Optional[str]) -> str:
+        """Cleans and sanitizes response text, removing raw artifacts and double punctuations."""
+        if not text:
+            return ""
+        # Remove stray markdown/json code fences if returned accidentally
+        cleaned = re.sub(r"^```(?:json|markdown|text)?\s*", "", text.strip())
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+        # Fix repeated commas, dots, or symbol artifacts like ", ." or ",,"
+        cleaned = re.sub(r",\s*[,;]+", ", ", cleaned)
+        cleaned = re.sub(r"\.\s*\.+", ".", cleaned)
+        cleaned = re.sub(r",\s*\.", ".", cleaned)
+        cleaned = re.sub(r"\s+([,\.!\?:;])", r"\1", cleaned)
+        return cleaned.strip()
+
     def _call_gemini(self, prompt: str, system_instruction: Optional[str] = None, json_output: bool = False) -> Optional[str]:
         """Performs a Gemini model interaction with error handling and automatic model fallbacks."""
         client = self.get_client()
         if not client:
             return None
 
-        # Try active model, followed by lightweight/flash alternatives
+        # Ultra-fast models priority: gemini-3.5-flash-lite (~1s), gemini-3.8-flash, gemini-3.5-flash
         candidate_models = [self._model]
-        for alt in ["gemini-2.5-flash-lite", "gemini-flash-latest"]:
+        for alt in ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash"]:
             if alt not in candidate_models:
                 candidate_models.append(alt)
 
@@ -128,8 +143,8 @@ class GeminiAgentService:
             f"You are ASPIRE Career Copilot, an elite AI technical career mentor for engineering students. "
             f"You are guiding {student_name} ({department}, CGPA: {cgpa}). "
             f"Current verified skills: {', '.join(skills)}. Target role: {role_target} at {comp_target}. "
-            f"Provide crisp, highly actionable, encouraging, and concrete advice with structured steps, code snippets, "
-            f"or specific interview patterns when asked. Keep answers concise, highly readable, and formatted with markdown."
+            f"Provide crisp, highly actionable, encouraging advice with clear bullet points or numbered steps. "
+            f"Use clean punctuation and natural phrasing. Do not produce stray symbols or raw code blocks unless writing code."
         )
 
         formatted_history_text = "\n".join([f"{h.get('role', 'user').upper()}: {h.get('content', '')}" for h in history[-6:]])
@@ -142,6 +157,7 @@ class GeminiAgentService:
         llm_reply = self._call_gemini(prompt=prompt, system_instruction=system_instruction)
 
         if llm_reply:
+            cleaned_reply = self._clean_text_response(llm_reply)
             # Extract suggested actions or construct defaults
             suggested = [
                 f"How to prepare for {comp_target} DSA rounds?",
@@ -149,7 +165,7 @@ class GeminiAgentService:
                 "Generate a 4-week remedial learning roadmap for my skill gaps",
             ]
             return {
-                "reply": llm_reply,
+                "reply": cleaned_reply,
                 "suggested_actions": suggested,
                 "model_used": self._model,
                 "created_at": datetime.now(),
@@ -721,6 +737,188 @@ class GeminiAgentService:
             "matches_found": matches_found,
             "notifications_dispatched": notifications_dispatched,
             "model_used": self._model if self.is_configured else "aspire-heuristic-agent",
+            "executed_at": now,
+        }
+
+    # =========================================================================
+    # 8. AUTONOMOUS JOB LIFECYCLE & ROTATION AGENT
+    # =========================================================================
+    def discover_and_rotate_jobs(
+        self,
+        db: Any,
+        target_count: int = 8,
+        force_refresh: bool = False,
+    ) -> Dict[str, Any]:
+        """Autonomous Job Lifecycle Agent:
+        1. Auto-expires outdated jobs past their application_end_date / deadline (marking them closed/inactive).
+        2. Discovers and synthesizes fresh, high-impact campus hiring drives with valid active application dates.
+        """
+        now = datetime.now()
+
+        # Step 1: Sweep expired jobs
+        expired_cursor = db["jobs"].find({
+            "status": "published",
+            "$or": [
+                {"application_end_date": {"$lt": now}},
+                {"deadline": {"$lt": now}},
+            ]
+        })
+        expired_count = 0
+        for exp_job in expired_cursor:
+            db["jobs"].update_one(
+                {"_id": exp_job["_id"]},
+                {"$set": {"status": "closed", "is_active": False, "updated_at": now}}
+            )
+            expired_count += 1
+
+        # Step 2: Check current active jobs count
+        active_query = {
+            "status": "published",
+            "is_active": {"$ne": False},
+            "$or": [
+                {"application_end_date": {"$gte": now}},
+                {"deadline": {"$gte": now}},
+                {"application_end_date": None, "deadline": None}
+            ]
+        }
+        current_active_count = db["jobs"].count_documents(active_query)
+
+        needed = max(0, target_count - current_active_count) if not force_refresh else 4
+        newly_created = []
+
+        if needed > 0:
+            REPUTED_COMPANIES = [
+                {"name": "Zoho Corporation", "industry": "Enterprise Software", "desc": "Global SaaS and business productivity platform provider.", "web": "https://zoho.com"},
+                {"name": "Swiggy", "industry": "E-Commerce & Logistics", "desc": "India's leading on-demand convenience and food delivery network.", "web": "https://swiggy.com"},
+                {"name": "Razorpay", "industry": "Fintech & Payments", "desc": "Full-stack payment infrastructure and banking platform.", "web": "https://razorpay.com"},
+                {"name": "Freshworks", "industry": "Customer Experience SaaS", "desc": "Cloud-based customer engagement and IT service management suite.", "web": "https://freshworks.com"},
+                {"name": "PhonePe", "industry": "Digital Payments", "desc": "India's leading UPI and digital financial transactions ecosystem.", "web": "https://phonepe.com"},
+                {"name": "Postman", "industry": "Developer Tools", "desc": "Universal API platform used by 30M+ developers worldwide.", "web": "https://postman.com"},
+                {"name": "CRED", "industry": "Fintech & Lifestyle", "desc": "High-trust community platform for creditworthy individuals.", "web": "https://cred.club"},
+                {"name": "Cisco Systems", "industry": "Networking & Cloud Security", "desc": "Worldwide leader in networking hardware, software, and cybersecurity.", "web": "https://cisco.com"},
+                {"name": "Atlassian", "industry": "Collaboration Software", "desc": "Makers of Jira, Confluence, and Trello powering global engineering teams.", "web": "https://atlassian.com"},
+                {"name": "Urban Company", "industry": "Hyperlocal Services", "desc": "Tech-enabled home services marketplace platform.", "web": "https://urbancompany.com"},
+            ]
+
+            JOB_TEMPLATES = [
+                {
+                    "title": "Software Development Engineer - Backend",
+                    "skills": ["Python", "FastAPI", "PostgreSQL", "Redis", "Docker"],
+                    "package": "₹14.0 - 18.5 LPA",
+                    "min_cgpa": 7.5,
+                    "location": "Bengaluru / Hyderabad (Hybrid)",
+                    "desc": "Design and architect high-throughput asynchronous microservices, optimize database queries, and build resilient distributed systems."
+                },
+                {
+                    "title": "Full Stack Software Engineer",
+                    "skills": ["React", "JavaScript", "TypeScript", "Node.js", "MongoDB"],
+                    "package": "₹12.0 - 16.0 LPA",
+                    "min_cgpa": 7.0,
+                    "location": "Chennai / Bengaluru",
+                    "desc": "Develop responsive, modular web applications, integrate REST APIs, and craft intuitive candidate-facing experiences."
+                },
+                {
+                    "title": "AI / Machine Learning Engineer",
+                    "skills": ["Python", "PyTorch", "NLP", "FastAPI", "Vector Databases"],
+                    "package": "₹16.0 - 22.0 LPA",
+                    "min_cgpa": 8.0,
+                    "location": "Bengaluru (Hybrid)",
+                    "desc": "Deploy large language model pipelines, optimize embeddings, and build production-grade Retrieval-Augmented Generation (RAG) agents."
+                },
+                {
+                    "title": "Systems & Platform Engineer",
+                    "skills": ["C++", "Linux", "Data Structures", "Computer Networks", "SQL"],
+                    "package": "₹10.5 - 14.0 LPA",
+                    "min_cgpa": 7.0,
+                    "location": "Bengaluru / Pune",
+                    "desc": "Optimize core runtime kernels, memory allocations, low-level socket programming, and platform infrastructure."
+                },
+                {
+                    "title": "Cloud Infrastructure & DevOps Engineer",
+                    "skills": ["Docker", "Kubernetes", "AWS / GCP", "CI/CD", "Python"],
+                    "package": "₹13.0 - 17.0 LPA",
+                    "min_cgpa": 7.2,
+                    "location": "Hyderabad / Remote",
+                    "desc": "Manage multi-region Kubernetes clusters, configure automated GitHub Actions pipelines, and monitor telemetry."
+                },
+                {
+                    "title": "Associate SDE - Core Foundations",
+                    "skills": ["Data Structures", "Algorithms", "Java / Python", "SQL", "OOP"],
+                    "package": "₹8.5 - 11.0 LPA",
+                    "min_cgpa": 6.5,
+                    "location": "Pan India",
+                    "desc": "Focus on high-speed problem solving, algorithmic optimization, unit testing, and scalable enterprise services."
+                }
+            ]
+
+            admin_or_recruiter = db["users"].find_one({"role": {"$in": ["recruiter", "admin"]}})
+            recruiter_id = admin_or_recruiter["_id"] if admin_or_recruiter else ObjectId()
+
+            selected_companies = random.sample(REPUTED_COMPANIES, min(needed, len(REPUTED_COMPANIES)))
+            
+            for comp_info in selected_companies:
+                company_doc = db["companies"].find_one({"name": comp_info["name"]})
+                if not company_doc:
+                    comp_id = db["companies"].insert_one({
+                        "name": comp_info["name"],
+                        "website": comp_info["web"],
+                        "industry": comp_info["industry"],
+                        "description": comp_info["desc"],
+                        "recruiter_id": recruiter_id,
+                        "created_at": now,
+                        "updated_at": now,
+                    }).inserted_id
+                else:
+                    comp_id = company_doc["_id"]
+
+                template = random.choice(JOB_TEMPLATES)
+                days_ago = random.randint(0, 3)
+                start_date = now - timedelta(days=days_ago)
+                days_duration = random.randint(14, 30)
+                end_date = now + timedelta(days=days_duration)
+
+                new_job_doc = {
+                    "company_id": comp_id,
+                    "title": template["title"],
+                    "description": template["desc"],
+                    "location": template["location"],
+                    "employment_type": "full_time",
+                    "min_cgpa": template["min_cgpa"],
+                    "eligible_departments": ["Computer Science", "Information Technology", "Artificial Intelligence", "Data Science", "Electronics"],
+                    "eligible_degrees": ["B.Tech", "B.E.", "M.Tech", "MCA"],
+                    "graduation_years": [2025, 2026, 2027],
+                    "required_skills": template["skills"],
+                    "preferred_skills": ["Git", "System Design", "Agile"],
+                    "package_details": template["package"],
+                    "application_url": f"https://careers.{comp_info['name'].lower().replace(' ', '')}.com/apply",
+                    "application_start_date": start_date,
+                    "application_end_date": end_date,
+                    "deadline": end_date,
+                    "status": "published",
+                    "is_active": True,
+                    "source_name": "ASPIRE AI Placement Radar",
+                    "source_url": comp_info["web"],
+                    "created_at": now,
+                    "updated_at": now,
+                }
+                
+                existing_job = db["jobs"].find_one({
+                    "company_id": comp_id,
+                    "title": template["title"],
+                    "status": "published"
+                })
+                if not existing_job:
+                    inserted_id = db["jobs"].insert_one(new_job_doc).inserted_id
+                    new_job_doc["_id"] = inserted_id
+                    newly_created.append(new_job_doc)
+
+        total_active_now = db["jobs"].count_documents(active_query)
+
+        return {
+            "status": "success",
+            "expired_jobs_archived": expired_count,
+            "new_jobs_discovered": len(newly_created),
+            "total_active_jobs": total_active_now,
             "executed_at": now,
         }
 

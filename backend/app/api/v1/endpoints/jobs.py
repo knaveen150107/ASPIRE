@@ -1,6 +1,6 @@
 """Job Postings and Eligibility Evaluation Router."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -17,7 +17,20 @@ from app.schemas.job import (
     JobUpdate,
 )
 
+from app.services.gemini_agent_service import ai_agent_service
+
 router = APIRouter()
+
+
+def _map_job_dates(j: Dict[str, Any]) -> tuple[Optional[datetime], Optional[datetime]]:
+    """Helper to ensure application_start_date and application_end_date are present."""
+    now = datetime.now()
+    start_date = j.get("application_start_date") or j.get("created_at") or now
+    end_date = j.get("application_end_date") or j.get("deadline")
+    if not end_date:
+        # Default 21-day active window
+        end_date = start_date + timedelta(days=21)
+    return start_date, end_date
 
 
 @router.get("", response_model=PaginatedResponse[JobResponse])
@@ -31,8 +44,15 @@ def list_jobs(
     page_size: int = Query(20, ge=1, le=100),
     db: Database = Depends(get_database),
 ) -> Any:
-    """Lists and filters job opportunities based on explicit eligibility parameters."""
-    query: Dict[str, Any] = {"status": status_filter}
+    """Lists and filters job opportunities, automatically retiring expired jobs and discovering fresh openings."""
+    # Autonomous Sweep & Replenishment
+    try:
+        ai_agent_service.discover_and_rotate_jobs(db, target_count=8)
+    except Exception:
+        pass
+
+    now = datetime.now()
+    query: Dict[str, Any] = {"status": status_filter, "is_active": {"$ne": False}}
     if department:
         query["eligible_departments"] = department
     if degree:
@@ -49,6 +69,8 @@ def list_jobs(
     results = []
     for j in jobs_cursor:
         company = db["companies"].find_one({"_id": j.get("company_id")})
+        start_date, end_date = _map_job_dates(j)
+
         results.append(
             JobResponse(
                 id=str(j["_id"]),
@@ -66,15 +88,29 @@ def list_jobs(
                 preferred_skills=[str(s) for s in j.get("preferred_skills", [])],
                 package_details=j.get("package_details"),
                 application_url=j.get("application_url"),
-                deadline=j.get("deadline"),
+                application_start_date=start_date,
+                application_end_date=end_date,
+                deadline=end_date,
                 status=j.get("status", "published"),
+                is_active=j.get("is_active", True),
                 source_name=j.get("source_name", "Campus Placement"),
                 source_url=j.get("source_url"),
-                created_at=j.get("created_at", datetime.now()),
-                updated_at=j.get("updated_at", datetime.now()),
+                created_at=j.get("created_at", now),
+                updated_at=j.get("updated_at", now),
             )
         )
     return PaginatedResponse(total=total, page=page, page_size=page_size, data=results)
+
+
+@router.post("/ai-discover", response_model=ApiResponse[Dict[str, Any]])
+def trigger_ai_job_discovery(
+    force: bool = Query(True, description="Force discovery of fresh job openings"),
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    db: Database = Depends(get_database),
+) -> Any:
+    """Invokes the AI Placement Radar Agent to auto-expire old openings and discover new campus hiring drives."""
+    result = ai_agent_service.discover_and_rotate_jobs(db, target_count=10, force_refresh=force)
+    return ApiResponse(message="AI Placement Radar successfully refreshed active jobs.", data=result)
 
 
 @router.get("/{job_id}", response_model=ApiResponse[JobResponse])
@@ -91,6 +127,8 @@ def get_job_details(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job posting not found.")
 
     company = db["companies"].find_one({"_id": job.get("company_id")})
+    start_date, end_date = _map_job_dates(job)
+
     return ApiResponse(
         data=JobResponse(
             id=str(job["_id"]),
@@ -108,8 +146,11 @@ def get_job_details(
             preferred_skills=[str(s) for s in job.get("preferred_skills", [])],
             package_details=job.get("package_details"),
             application_url=job.get("application_url"),
-            deadline=job.get("deadline"),
+            application_start_date=start_date,
+            application_end_date=end_date,
+            deadline=end_date,
             status=job.get("status", "published"),
+            is_active=job.get("is_active", True),
             source_name=job.get("source_name", "Campus Placement"),
             source_url=job.get("source_url"),
             created_at=job.get("created_at", datetime.now()),

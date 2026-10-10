@@ -27,7 +27,7 @@ def create_mock_test(
     student_ctx: Dict[str, Any] = Depends(get_current_student),
     db: Database = Depends(get_database),
 ) -> Any:
-    """Creates a new mock test practice session."""
+    """Creates a new mock test practice session or saves a completed assessment result."""
     profile = student_ctx["profile"]
     if not profile:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student profile is incomplete.")
@@ -35,14 +35,25 @@ def create_mock_test(
     job_oid = ObjectId(payload.job_id) if payload.job_id and ObjectId.is_valid(payload.job_id) else None
     now = datetime.now()
 
+    is_completed = payload.status == "completed" or payload.percentage is not None or payload.score is not None
+
     test_doc = {
         "student_id": profile["_id"],
         "job_id": job_oid,
         "title": payload.title,
-        "difficulty": payload.difficulty,
-        "status": "created",
+        "company_name": payload.company_name or "General Assessment",
+        "category": payload.category or "technical",
+        "difficulty": payload.difficulty or "intermediate",
+        "status": "completed" if is_completed else (payload.status or "created"),
+        "score": payload.score,
+        "percentage": payload.percentage,
+        "correct_count": payload.correct_count,
+        "total_questions": payload.total_questions or (len(payload.questions) if payload.questions else 0),
+        "topic_scores": payload.topic_scores,
+        "detailed_feedback": payload.detailed_feedback,
+        "ai_feedback": payload.ai_feedback,
         "started_at": now,
-        "completed_at": None,
+        "completed_at": now if is_completed else None,
         "created_at": now,
     }
     result = db["mock_tests"].insert_one(test_doc)
@@ -53,32 +64,55 @@ def create_mock_test(
     if payload.questions:
         for q in payload.questions:
             skill_oid = ObjectId(q.skill_id) if ObjectId.is_valid(q.skill_id) else None
-            if not skill_oid:
-                continue
             q_doc = {
                 "mock_test_id": test_id,
                 "skill_id": skill_oid,
                 "question_text": q.question_text,
                 "question_type": q.question_type,
                 "options": [opt.model_dump() for opt in q.options] if q.options else None,
-                "correct_answer": q.correct_answer,  # Securely stored
+                "correct_answer": q.correct_answer,
                 "explanation": q.explanation,
                 "marks": q.marks,
                 "created_at": now,
             }
             db["test_questions"].insert_one(q_doc)
             q_count += 1
+    else:
+        q_count = payload.total_questions or 0
+
+    # Also persist in test_results if it has percentage/score
+    if payload.percentage is not None or payload.score is not None:
+        db["test_results"].insert_one({
+            "mock_test_id": test_id,
+            "student_id": profile["_id"],
+            "score": payload.score or 0.0,
+            "percentage": payload.percentage or 0.0,
+            "correct_count": payload.correct_count or 0,
+            "total_questions": q_count,
+            "topic_scores": payload.topic_scores,
+            "evaluated_at": now,
+        })
 
     return ApiResponse(
-        message="Mock test created successfully.",
+        message="Mock test recorded successfully.",
         data=MockTestResponse(
             id=str(test_id),
             student_id=str(profile["_id"]),
             job_id=str(job_oid) if job_oid else None,
             title=payload.title,
-            difficulty=payload.difficulty,
-            status="created",
+            company_name=payload.company_name or "General Assessment",
+            category=payload.category or "technical",
+            difficulty=payload.difficulty or "intermediate",
+            status="completed" if is_completed else (payload.status or "created"),
+            score=payload.score,
+            percentage=payload.percentage,
+            correct_count=payload.correct_count,
+            total_questions=q_count,
+            topic_scores=payload.topic_scores,
+            detailed_feedback=payload.detailed_feedback,
+            ai_feedback=payload.ai_feedback,
             started_at=now,
+            completed_at=now if is_completed else None,
             created_at=now,
             questions_count=q_count,
         ),
@@ -90,7 +124,7 @@ def list_my_mock_tests(
     student_ctx: Dict[str, Any] = Depends(get_current_student),
     db: Database = Depends(get_database),
 ) -> Any:
-    """Lists assessment history for the current student."""
+    """Lists assessment performance history for the current student."""
     profile = student_ctx["profile"]
     if not profile:
         return ApiResponse(data=[])
@@ -99,14 +133,41 @@ def list_my_mock_tests(
     results = []
     for t in tests_cursor:
         q_count = db["test_questions"].count_documents({"mock_test_id": t["_id"]})
+        if q_count == 0:
+            q_count = t.get("total_questions", 0)
+
+        # Fallback to test_results if percentage is not stored directly on mock_tests
+        score = t.get("score")
+        percentage = t.get("percentage")
+        correct_count = t.get("correct_count")
+        topic_scores = t.get("topic_scores")
+
+        if percentage is None:
+            res_doc = db["test_results"].find_one({"mock_test_id": t["_id"]})
+            if res_doc:
+                score = res_doc.get("score")
+                percentage = res_doc.get("percentage")
+                correct_count = res_doc.get("correct_count")
+                if not topic_scores:
+                    topic_scores = res_doc.get("topic_scores")
+
         results.append(
             MockTestResponse(
                 id=str(t["_id"]),
                 student_id=str(t["student_id"]),
                 job_id=str(t["job_id"]) if t.get("job_id") else None,
                 title=t["title"],
+                company_name=t.get("company_name", "General Assessment"),
+                category=t.get("category", "technical"),
                 difficulty=t.get("difficulty", "intermediate"),
-                status=t.get("status", "created"),
+                status=t.get("status", "completed"),
+                score=score,
+                percentage=percentage,
+                correct_count=correct_count,
+                total_questions=q_count or t.get("total_questions", 0),
+                topic_scores=topic_scores,
+                detailed_feedback=t.get("detailed_feedback"),
+                ai_feedback=t.get("ai_feedback"),
                 started_at=t.get("started_at"),
                 completed_at=t.get("completed_at"),
                 created_at=t.get("created_at", datetime.now()),
@@ -114,6 +175,30 @@ def list_my_mock_tests(
             )
         )
     return ApiResponse(data=results)
+
+
+@router.delete("/{test_id}", response_model=ApiResponse[dict])
+def delete_mock_test(
+    test_id: str,
+    student_ctx: Dict[str, Any] = Depends(get_current_student),
+    db: Database = Depends(get_database),
+) -> Any:
+    """Deletes a past mock test attempt and its associated results."""
+    profile = student_ctx["profile"]
+    if not profile or not ObjectId.is_valid(test_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile or test ID.")
+
+    test_oid = ObjectId(test_id)
+    test = db["mock_tests"].find_one({"_id": test_oid, "student_id": profile["_id"]})
+    if not test:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mock test not found.")
+
+    db["mock_tests"].delete_one({"_id": test_oid})
+    db["test_questions"].delete_many({"mock_test_id": test_oid})
+    db["test_results"].delete_many({"mock_test_id": test_oid})
+    db["question_responses"].delete_many({"result_id": {"$in": [r["_id"] for r in db["test_results"].find({"mock_test_id": test_oid})]}})
+
+    return ApiResponse(message="Mock test performance record deleted successfully.", data={"deleted_id": test_id})
 
 
 @router.get("/{test_id}/questions", response_model=ApiResponse[List[TestQuestionPublicResponse]])

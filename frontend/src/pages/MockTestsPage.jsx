@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Award, 
   Clock, 
@@ -16,7 +16,14 @@ import {
   Building2,
   MapPin,
   DollarSign,
-  ArrowRight
+  ArrowRight,
+  TrendingUp,
+  Trash2,
+  Eye,
+  Calendar,
+  RotateCcw,
+  Target,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +33,7 @@ const SAMPLE_ASSESSMENTS = [
   {
     id: 'dsa_core',
     title: 'Data Structures & Algorithms Diagnostic',
+    company_name: 'General Assessment',
     category: 'technical',
     duration_mins: 15,
     difficulty: 'intermediate',
@@ -75,6 +83,7 @@ const SAMPLE_ASSESSMENTS = [
   {
     id: 'quant_aptitude',
     title: 'Quantitative Aptitude & Placement Logic',
+    company_name: 'Campus Aptitude',
     category: 'aptitude',
     duration_mins: 10,
     difficulty: 'standard',
@@ -108,6 +117,7 @@ const SAMPLE_ASSESSMENTS = [
   {
     id: 'ai_system_design',
     title: 'AI & Distributed Backend Architecture',
+    company_name: 'Tech Enterprise',
     category: 'technical',
     duration_mins: 15,
     difficulty: 'advanced',
@@ -159,6 +169,8 @@ export default function MockTestsPage() {
   // Past test history
   const [pastTests, setPastTests] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [selectedScorecard, setSelectedScorecard] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   // AI Dynamic Generator State
   const [isAiGenModalOpen, setIsAiGenModalOpen] = useState(false);
@@ -243,6 +255,44 @@ export default function MockTestsPage() {
     }
   };
 
+  const handleDeleteTest = async (testId, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this test performance record?')) return;
+    try {
+      setDeletingId(testId);
+      await api.deleteMockTest(testId);
+      setPastTests((prev) => prev.filter((t) => (t.id || t._id) !== testId));
+      if (selectedScorecard && (selectedScorecard.id === testId || selectedScorecard._id === testId)) {
+        setSelectedScorecard(null);
+      }
+      toast.success('Test performance record removed.');
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete test record');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Performance Aggregate Statistics
+  const historyStats = useMemo(() => {
+    const validScores = pastTests
+      .map((t) => (t.percentage !== undefined && t.percentage !== null ? Number(t.percentage) : Number(t.score)))
+      .filter((s) => !isNaN(s));
+
+    const totalTests = pastTests.length;
+    if (totalTests === 0 || validScores.length === 0) {
+      return { total: 0, avgScore: 0, passCount: 0, passRate: 0, highestScore: 0 };
+    }
+
+    const sum = validScores.reduce((acc, s) => acc + s, 0);
+    const avgScore = Math.round(sum / validScores.length);
+    const passCount = validScores.filter((s) => s >= 70).length;
+    const passRate = Math.round((passCount / validScores.length) * 100);
+    const highestScore = Math.max(...validScores);
+
+    return { total: totalTests, avgScore, passCount, passRate, highestScore };
+  }, [pastTests]);
+
   const handleGenerateAiTest = async (e) => {
     e.preventDefault();
     setGeneratingAiTest(true);
@@ -271,7 +321,8 @@ export default function MockTestsPage() {
       const dynamicAssessment = {
         id: `ai_gen_${Date.now()}`,
         title: res.title || `${aiGenForm.companyName} Technical Assessment`,
-        category: 'technical',
+        company_name: aiGenForm.companyName,
+        category: aiGenForm.category || 'technical',
         duration_mins: res.duration_minutes || 15,
         difficulty: aiGenForm.difficulty,
         questions: formattedQuestions,
@@ -331,15 +382,37 @@ export default function MockTestsPage() {
       };
     });
 
-    const scorePercentage = Math.round((correctCount / activeAssessment.questions.length) * 100);
+    const totalQuestions = activeAssessment.questions.length;
+    const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+    const compName = activeAssessment.company_name || (activeAssessment.title?.includes('Assessment') ? activeAssessment.title.split(' ')[0] : 'General Assessment');
+
+    // Generate diagnostic feedback
+    let diagnosticSummary = '';
+    if (scorePercentage >= 80) {
+      diagnosticSummary = `Exceptional performance! High competency demonstrated across ${activeAssessment.category || 'technical'} interview requirements.`;
+    } else if (scorePercentage >= 60) {
+      diagnosticSummary = `Good foundational score. Recommended to review weaker topics before technical rounds.`;
+    } else {
+      diagnosticSummary = `Needs focused revision in ${activeAssessment.category || 'core areas'}. Review question explanations and retake the test.`;
+    }
 
     const resultObj = {
       score: scorePercentage,
+      percentage: scorePercentage,
       correct: correctCount,
-      total: activeAssessment.questions.length,
+      correct_count: correctCount,
+      total: totalQuestions,
+      total_questions: totalQuestions,
       topicBreakdown,
+      topic_scores: topicBreakdown,
       detailedFeedback,
+      detailed_feedback: detailedFeedback,
       assessmentTitle: activeAssessment.title,
+      company_name: compName,
+      category: activeAssessment.category,
+      difficulty: activeAssessment.difficulty,
+      ai_feedback: diagnosticSummary,
+      created_at: new Date().toISOString(),
     };
 
     setTestResult(resultObj);
@@ -347,16 +420,22 @@ export default function MockTestsPage() {
     try {
       await api.createMockTest({
         title: activeAssessment.title,
-        category: activeAssessment.category,
-        total_questions: activeAssessment.questions.length,
+        company_name: compName,
+        category: activeAssessment.category || 'technical',
+        difficulty: activeAssessment.difficulty || 'intermediate',
+        total_questions: totalQuestions,
         score: scorePercentage,
+        percentage: scorePercentage,
+        correct_count: correctCount,
         status: 'completed',
         topic_scores: topicBreakdown,
+        detailed_feedback: detailedFeedback,
+        ai_feedback: diagnosticSummary,
       });
       loadTestHistory();
-      toast.success(`Assessment completed! Score: ${scorePercentage}%`);
+      toast.success(`Assessment saved to performance history! Score: ${scorePercentage}%`);
     } catch (err) {
-      // logged
+      console.error('Failed to save mock test performance:', err);
     }
   };
 
@@ -383,7 +462,7 @@ export default function MockTestsPage() {
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">{activeAssessment.title}</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Question {currentQuestionIdx + 1} of {activeAssessment.questions.length}
+                    Question {currentQuestionIdx + 1} of {activeAssessment.questions.length} • {activeAssessment.company_name || 'Technical'}
                   </p>
                 </div>
               </div>
@@ -486,7 +565,7 @@ export default function MockTestsPage() {
             })()}
           </div>
         ) : testResult ? (
-          /* Scorecard Review View */
+          /* Live Submitted Scorecard Review View */
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="p-8 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-lg text-center space-y-5 transition-colors">
               <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-inner">
@@ -494,97 +573,113 @@ export default function MockTestsPage() {
               </div>
 
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Assessment Result</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Performance Diagnostic Card • {testResult.company_name || 'Practice Round'}
+                </span>
                 <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">{testResult.assessmentTitle}</h2>
-                <div className="mt-4 text-5xl font-black text-blue-600 dark:text-blue-400">
+                <div className={`mt-4 text-5xl font-black ${
+                  testResult.score >= 70 ? 'text-emerald-600 dark:text-emerald-400' : testResult.score >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
+                }`}>
                   {testResult.score}%
                 </div>
                 <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-2">
                   You scored <strong className="text-slate-800 dark:text-slate-200">{testResult.correct}</strong> out of <strong className="text-slate-800 dark:text-slate-200">{testResult.total}</strong> questions correctly.
                 </p>
+                {testResult.ai_feedback && (
+                  <div className="mt-4 p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-xs text-blue-800 dark:text-blue-200 font-medium max-w-xl mx-auto">
+                    <span className="font-bold">AI Diagnostic Insight: </span>{testResult.ai_feedback}
+                  </div>
+                )}
               </div>
 
               {/* Topic Breakdown */}
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Topic-Wise Competency Breakdown</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {Object.entries(testResult.topicBreakdown).map(([topic, stats]) => {
-                    const pct = Math.round((stats.correct / stats.total) * 100);
-                    return (
-                      <div key={topic} className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1.5">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-slate-800 dark:text-slate-200">{topic}</span>
-                          <span className={pct >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>{pct}%</span>
+              {testResult.topicBreakdown && Object.keys(testResult.topicBreakdown).length > 0 && (
+                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Topic-Wise Competency Breakdown</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {Object.entries(testResult.topicBreakdown).map(([topic, stats]) => {
+                      const pct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+                      return (
+                        <div key={topic} className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1.5">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-slate-800 dark:text-slate-200">{topic}</span>
+                            <span className={pct >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>{pct}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${pct >= 70 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                              style={{ width: `${pct}%` }}
+                            ></div>
+                          </div>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${pct >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                            style={{ width: `${pct}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="pt-2">
+              <div className="pt-2 flex items-center justify-center gap-3">
                 <button
                   onClick={() => setTestResult(null)}
                   className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition"
                 >
-                  Back to Assessments Directory
+                  Back to Assessments & History
                 </button>
               </div>
             </div>
 
             {/* Questions Detailed Breakdown */}
-            <div className="space-y-3.5">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Itemized Solutions & Explanations</h3>
-              {testResult.detailedFeedback.map((item, idx) => (
-                <div
-                  key={idx}
-                  className={`p-6 rounded-2xl border space-y-3 bg-white dark:bg-slate-900/90 transition-colors ${
-                    item.is_correct ? 'border-emerald-200 dark:border-emerald-800/80' : 'border-rose-200 dark:border-rose-800/80'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
-                      {idx + 1}. {item.question}
-                    </h4>
-                    {item.is_correct ? (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Correct
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 flex items-center gap-1">
-                        <X className="w-3 h-3" /> Incorrect
-                      </span>
-                    )}
-                  </div>
+            {testResult.detailedFeedback && testResult.detailedFeedback.length > 0 && (
+              <div className="space-y-3.5">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Itemized Solutions & Explanations</h3>
+                {testResult.detailedFeedback.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-6 rounded-2xl border space-y-3 bg-white dark:bg-slate-900/90 transition-colors ${
+                      item.is_correct ? 'border-emerald-200 dark:border-emerald-800/80' : 'border-rose-200 dark:border-rose-800/80'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                        {idx + 1}. {item.question}
+                      </h4>
+                      {item.is_correct ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> Correct
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 flex items-center gap-1">
+                          <X className="w-3 h-3" /> Incorrect
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="text-xs space-y-1">
-                    <p className="text-slate-600 dark:text-slate-300">
-                      Your Answer: <strong className={item.is_correct ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}>{item.selected_option}</strong>
-                    </p>
-                    {!item.is_correct && (
+                    <div className="text-xs space-y-1">
                       <p className="text-slate-600 dark:text-slate-300">
-                        Correct Answer: <strong className="text-emerald-700 dark:text-emerald-400">{item.correct_option}</strong>
+                        Your Answer: <strong className={item.is_correct ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}>{item.selected_option}</strong>
                       </p>
+                      {!item.is_correct && (
+                        <p className="text-slate-600 dark:text-slate-300">
+                          Correct Answer: <strong className="text-emerald-700 dark:text-emerald-400">{item.correct_option}</strong>
+                        </p>
+                      )}
+                    </div>
+
+                    {item.explanation && (
+                      <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+                        <span className="font-bold text-blue-700 dark:text-blue-400">Explanation: </span>
+                        {item.explanation}
+                      </div>
                     )}
                   </div>
-
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
-                    <span className="font-bold text-blue-700 dark:text-blue-400">Explanation: </span>
-                    {item.explanation}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
-          /* Catalog View */
+          /* Catalog & Historical Performance View */
           <>
+            {/* Top Banner */}
             <div className="rounded-3xl p-8 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-1.5">
@@ -596,7 +691,7 @@ export default function MockTestsPage() {
                     Placement Mock Assessments
                   </h1>
                   <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl font-normal">
-                    Simulate real company hiring assessments for software engineering, product, and quant roles.
+                    Practice company-specific interview tests, track complete performance history, and analyze topic-wise competency scorecards.
                   </p>
                 </div>
 
@@ -615,11 +710,58 @@ export default function MockTestsPage() {
                   </div>
                   <div className="px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
                     <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{pastTests.length}</div>
-                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Completed</div>
+                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">History Logged</div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Performance Analytics Overview Cards */}
+            {pastTests.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Attempts</p>
+                    <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">{historyStats.total} Tests</h3>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                    <Award className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Average Score</p>
+                    <h3 className={`text-xl font-extrabold ${historyStats.avgScore >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                      {historyStats.avgScore}%
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Pass Rate (≥70%)</p>
+                    <h3 className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">{historyStats.passRate}% ({historyStats.passCount})</h3>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Best Performance</p>
+                    <h3 className="text-xl font-extrabold text-amber-600 dark:text-amber-400">{historyStats.highestScore}%</h3>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Modal: AI Mock Test Generator */}
             {isAiGenModalOpen && (
@@ -804,6 +946,290 @@ export default function MockTestsPage() {
               </div>
             )}
 
+            {/* Modal: Interactive Past Scorecard Review */}
+            {selectedScorecard && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        {selectedScorecard.company_name || 'Technical Assessment'}
+                      </div>
+                      <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mt-1">
+                        {selectedScorecard.title}
+                      </h2>
+                      <p className="text-xs text-slate-400">
+                        Attempted on {new Date(selectedScorecard.created_at || selectedScorecard.completed_at || Date.now()).toLocaleDateString(undefined, {
+                          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedScorecard(null)}
+                      className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center font-bold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Score Banner */}
+                  <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Recorded Score</span>
+                      <div className={`text-3xl font-black ${
+                        (selectedScorecard.percentage ?? selectedScorecard.score) >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {(selectedScorecard.percentage ?? selectedScorecard.score ?? 0)}%
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {selectedScorecard.correct_count !== undefined && selectedScorecard.total_questions ? (
+                          <span>{selectedScorecard.correct_count} of {selectedScorecard.total_questions} questions correct</span>
+                        ) : (
+                          <span>Completed assessment</span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        (selectedScorecard.percentage ?? selectedScorecard.score) >= 70
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                          : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                      }`}>
+                        {(selectedScorecard.percentage ?? selectedScorecard.score) >= 70 ? 'Passed' : 'Needs Practice'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* AI Feedback */}
+                  {selectedScorecard.ai_feedback && (
+                    <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 space-y-1">
+                      <span className="font-bold flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        AI Diagnostic Insight
+                      </span>
+                      <p className="leading-relaxed">{selectedScorecard.ai_feedback}</p>
+                    </div>
+                  )}
+
+                  {/* Topic Scores Breakdown */}
+                  {selectedScorecard.topic_scores && typeof selectedScorecard.topic_scores === 'object' && Object.keys(selectedScorecard.topic_scores).length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Topic-Wise Competency</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {Object.entries(selectedScorecard.topic_scores).map(([topic, stats]) => {
+                          const pct = typeof stats === 'object' && stats.total > 0
+                            ? Math.round((stats.correct / stats.total) * 100)
+                            : (typeof stats === 'number' ? stats : 0);
+                          return (
+                            <div key={topic} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1.5">
+                              <div className="flex justify-between text-xs font-bold">
+                                <span className="text-slate-800 dark:text-slate-200">{topic}</span>
+                                <span className={pct >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>{pct}%</span>
+                              </div>
+                              <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${pct >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                  style={{ width: `${pct}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Detailed Solutions if present */}
+                  {selectedScorecard.detailed_feedback && Array.isArray(selectedScorecard.detailed_feedback) && selectedScorecard.detailed_feedback.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Question-by-Question Review</h4>
+                      <div className="space-y-3">
+                        {selectedScorecard.detailed_feedback.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className={`p-4 rounded-xl border text-xs space-y-2 ${
+                              item.is_correct ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/20' : 'border-rose-200 dark:border-rose-800/80 bg-rose-50/20'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <span className="font-bold text-slate-900 dark:text-white">
+                                {idx + 1}. {item.question}
+                              </span>
+                              {item.is_correct ? (
+                                <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 shrink-0">
+                                  <Check className="w-3 h-3" /> Correct
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-rose-600 flex items-center gap-0.5 shrink-0">
+                                  <X className="w-3 h-3" /> Incorrect
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] space-y-0.5 text-slate-600 dark:text-slate-300">
+                              <div>Your Answer: <strong className={item.is_correct ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}>{item.selected_option}</strong></div>
+                              {!item.is_correct && <div>Correct Answer: <strong className="text-emerald-700 dark:text-emerald-400">{item.correct_option}</strong></div>}
+                            </div>
+                            {item.explanation && (
+                              <div className="p-2.5 rounded-lg bg-white dark:bg-slate-800 text-[11px] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                <span className="font-bold text-blue-600 dark:text-blue-400">Explanation: </span>{item.explanation}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                    <button
+                      onClick={() => handleDeleteTest(selectedScorecard.id || selectedScorecard._id)}
+                      className="px-3.5 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-xs font-bold flex items-center gap-1.5 transition"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete This Record
+                    </button>
+                    <button
+                      onClick={() => setSelectedScorecard(null)}
+                      className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition"
+                    >
+                      Close Scorecard
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Performance History Section */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    Mock Test Performance History ({pastTests.length})
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    All completed assessments are recorded here with scorecards, topic mastery, and diagnostic review.
+                  </p>
+                </div>
+              </div>
+
+              {pastTests.length === 0 ? (
+                <div className="text-center py-10 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-white">No Mock Tests Recorded Yet</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-0.5">
+                      Take your first diagnostic practice assessment or generate a custom AI test for an upcoming campus interview to track your performance history.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => startAssessment(SAMPLE_ASSESSMENTS[0])}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition"
+                  >
+                    Take Sample Diagnostic Test
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 uppercase font-bold text-[10px]">
+                      <tr>
+                        <th className="py-3 px-4">Company / Title</th>
+                        <th className="py-3 px-4">Category</th>
+                        <th className="py-3 px-4">Questions</th>
+                        <th className="py-3 px-4">Score</th>
+                        <th className="py-3 px-4">Date & Time</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                      {pastTests.map((t, idx) => {
+                        const testId = t.id || t._id;
+                        const scoreVal = t.percentage !== undefined && t.percentage !== null ? t.percentage : (t.score ?? 0);
+                        const isPassed = scoreVal >= 70;
+                        const dateFormatted = t.created_at || t.completed_at
+                          ? new Date(t.created_at || t.completed_at).toLocaleDateString(undefined, {
+                              month: 'short', day: 'numeric', year: 'numeric'
+                            })
+                          : 'Recent';
+
+                        return (
+                          <tr key={testId || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-extrabold text-xs flex items-center justify-center shrink-0">
+                                  {(t.company_name || 'T').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                    <span>{t.title}</span>
+                                  </div>
+                                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">{t.company_name || 'General Assessment'}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 capitalize">
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-semibold">
+                                {t.category || 'technical'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                                {t.correct_count !== undefined ? `${t.correct_count} / ${t.total_questions || t.questions_count || 5}` : `${t.total_questions || t.questions_count || 5} Qs`}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-extrabold text-sm ${
+                                  isPassed ? 'text-emerald-600 dark:text-emerald-400' : scoreVal >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
+                                }`}>
+                                  {scoreVal}%
+                                </span>
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                  isPassed
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                    : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                                }`}>
+                                  {isPassed ? 'Pass' : 'Practice'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-400 text-[11px]">
+                              {dateFormatted}
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => setSelectedScorecard(t)}
+                                  className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-700 dark:text-blue-300 text-[11px] font-bold flex items-center gap-1 transition"
+                                  title="View full diagnostic scorecard"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Review</span>
+                                </button>
+                                <button
+                                  onClick={(e) => handleDeleteTest(testId, e)}
+                                  disabled={deletingId === testId}
+                                  className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition disabled:opacity-50"
+                                  title="Delete test attempt"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
             {/* Active Campus Drives Practice Section */}
             {jobDrives.length > 0 && (
               <div className="space-y-4">
@@ -876,91 +1302,62 @@ export default function MockTestsPage() {
               </div>
             )}
 
-            {/* Assessment Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {SAMPLE_ASSESSMENTS.map((assessment) => (
-                <div
-                  key={assessment.id}
-                  className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition flex flex-col justify-between group shadow-xs"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                        {assessment.category}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                        <Clock className="w-3.5 h-3.5" />
-                        {assessment.duration_mins} mins
-                      </span>
-                    </div>
-
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
-                      {assessment.title}
-                    </h3>
-
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
-                      Evaluate problem solving, complexity analysis, and algorithms with {assessment.questions.length} adaptive multiple-choice questions.
-                    </p>
-
-                    <div className="pt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                      <Zap className="w-3.5 h-3.5 text-amber-500" />
-                      Difficulty: <span className="font-bold text-slate-800 dark:text-slate-200 capitalize">{assessment.difficulty}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-5 border-t border-slate-100 dark:border-slate-800 mt-4">
-                    <button
-                      onClick={() => startAssessment(assessment)}
-                      className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2"
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      Start Assessment Now
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Past History Table */}
-            {pastTests.length > 0 && (
-              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  Assessment History & Progress
-                </h3>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 uppercase font-bold text-[10px]">
-                      <tr>
-                        <th className="py-3 px-4">Test Title</th>
-                        <th className="py-3 px-4">Category</th>
-                        <th className="py-3 px-4">Questions</th>
-                        <th className="py-3 px-4">Score</th>
-                        <th className="py-3 px-4">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                      {pastTests.map((t, idx) => (
-                        <tr key={t._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{t.title}</td>
-                          <td className="py-3.5 px-4 capitalize">{t.category}</td>
-                          <td className="py-3.5 px-4">{t.total_questions || 10}</td>
-                          <td className="py-3.5 px-4">
-                            <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{t.score}%</span>
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                              {t.status || 'Completed'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            {/* Standard Practice Assessment Cards */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  Standard Core Competency Assessments
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Fixed benchmark assessments designed to evaluate baseline aptitude, algorithms, and distributed systems.
+                </p>
               </div>
-            )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {SAMPLE_ASSESSMENTS.map((assessment) => (
+                  <div
+                    key={assessment.id}
+                    className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition flex flex-col justify-between group shadow-xs"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                          {assessment.category}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          <Clock className="w-3.5 h-3.5" />
+                          {assessment.duration_mins} mins
+                        </span>
+                      </div>
+
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        {assessment.title}
+                      </h3>
+
+                      <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
+                        Evaluate problem solving, complexity analysis, and algorithms with {assessment.questions.length} adaptive multiple-choice questions.
+                      </p>
+
+                      <div className="pt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                        <Zap className="w-3.5 h-3.5 text-amber-500" />
+                        Difficulty: <span className="font-bold text-slate-800 dark:text-slate-200 capitalize">{assessment.difficulty}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-5 border-t border-slate-100 dark:border-slate-800 mt-4">
+                      <button
+                        onClick={() => startAssessment(assessment)}
+                        className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        Start Assessment Now
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
 

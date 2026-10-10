@@ -17,22 +17,91 @@ import {
   Activity,
   Layers,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import EligibilityModal from '../components/EligibilityModal';
 
+// Date & Application Status Helpers
+const formatJobDate = (dateStr) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const getApplicationStatusPill = (startDateStr, endDateStr) => {
+  const now = new Date();
+  const start = startDateStr ? new Date(startDateStr) : null;
+  const end = endDateStr ? new Date(endDateStr) : null;
+
+  if (end && now > end) {
+    return {
+      text: 'Application Closed',
+      isClosed: true,
+      bg: 'bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800',
+    };
+  }
+
+  if (start && now < start) {
+    const daysUntil = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+    return {
+      text: `Opens in ${daysUntil}d`,
+      isClosed: true,
+      bg: 'bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800',
+    };
+  }
+
+  if (end) {
+    const daysLeft = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+    if (daysLeft <= 3) {
+      return {
+        text: `Closing in ${daysLeft}d`,
+        isClosed: false,
+        bg: 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 animate-pulse',
+      };
+    }
+    return {
+      text: `Open • ${daysLeft}d left`,
+      isClosed: false,
+      bg: 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800',
+    };
+  }
+
+  return {
+    text: 'Applications Open',
+    isClosed: false,
+    bg: 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800',
+  };
+};
+
 export default function JobsPage({ onNavigate }) {
   const { user } = useAuth();
   const toast = useToast();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshingAiJobs, setIsRefreshingAiJobs] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedDegree, setSelectedDegree] = useState('All');
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'applied'
+
+  const handleRefreshAiJobs = async () => {
+    try {
+      setIsRefreshingAiJobs(true);
+      toast.info('AI Placement Radar is scanning for fresh drives & expiring old jobs...');
+      const res = await api.triggerAiJobDiscovery(true);
+      toast.success(`AI Radar Synced: ${res?.new_jobs_discovered || 0} fresh jobs added, ${res?.expired_jobs_archived || 0} expired archived.`);
+      await fetchJobsAndUserData();
+    } catch (err) {
+      toast.error(err.message || 'Failed to trigger AI job discovery');
+    } finally {
+      setIsRefreshingAiJobs(false);
+    }
+  };
 
   // Selected job for eligibility modal
   const [auditJob, setAuditJob] = useState(null);
@@ -216,10 +285,19 @@ export default function JobsPage({ onNavigate }) {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleRefreshAiJobs}
+                disabled={isRefreshingAiJobs}
+                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-2 disabled:opacity-60"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingAiJobs ? 'animate-spin' : ''}`} />
+                <span>{isRefreshingAiJobs ? 'AI Scanning...' : 'AI Auto-Discover Drives'}</span>
+              </button>
+
               <div className="px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
                 <div className="text-xl font-extrabold text-slate-900 dark:text-white">{jobs.length}</div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Total Drives</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Active Drives</div>
               </div>
               <div className="px-4 py-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
                 <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{myAppliedJobIds.size}</div>
@@ -560,6 +638,10 @@ export default function JobsPage({ onNavigate }) {
                   const maxBacklogs = job.max_backlogs ?? job.eligibility_criteria?.max_backlogs_allowed ?? 0;
                   const salaryDisplay = (typeof job.package_details === 'string' ? job.package_details : null) || job.salary_range || 'Competitive Package';
                   const jobTypeDisplay = (job.employment_type ? job.employment_type.replace('_', ' ') : null) || job.job_type || 'Full Time';
+                  
+                  const startDate = job.application_start_date || job.created_at;
+                  const endDate = job.application_end_date || job.deadline;
+                  const statusPill = getApplicationStatusPill(startDate, endDate);
 
                   return (
                     <div
@@ -622,8 +704,25 @@ export default function JobsPage({ onNavigate }) {
                           </div>
                         )}
 
+                        {/* Application Window & Dates */}
+                        <div className="mt-3 p-2.5 rounded-2xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-1.5 text-[11px]">
+                          <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                            <span className="flex items-center gap-1.5 font-bold">
+                              <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                              Application Dates:
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusPill.bg}`}>
+                              {statusPill.text}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-medium pt-0.5">
+                            <span>Opens: <strong className="text-slate-700 dark:text-slate-300">{formatJobDate(startDate) || 'Active'}</strong></span>
+                            <span>Deadline: <strong className="text-slate-700 dark:text-slate-300">{formatJobDate(endDate) || 'Ongoing'}</strong></span>
+                          </div>
+                        </div>
+
                         {/* Academic Criteria Badge */}
-                        <div className="mt-3.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                        <div className="mt-2 p-2 rounded-xl bg-slate-50/60 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
                           <span className="flex items-center gap-1 font-medium">
                             <GraduationCap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                             Min CGPA: <strong className="text-slate-800 dark:text-slate-200">{minCgpa > 0 ? minCgpa : 'No Cutoff'}</strong>
@@ -657,6 +756,13 @@ export default function JobsPage({ onNavigate }) {
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Applied
+                          </button>
+                        ) : statusPill.isClosed ? (
+                          <button
+                            disabled
+                            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs font-bold cursor-not-allowed border border-slate-200 dark:border-slate-700"
+                          >
+                            {statusPill.text.includes('Opens') ? 'Upcoming' : 'Closed'}
                           </button>
                         ) : (
                           <button

@@ -88,8 +88,11 @@ class JobCreate(BaseModel):
     preferred_skills: List[str] = Field(default_factory=list)
     package_details: Optional[Union[Dict[str, Any], str]] = None
     application_url: Optional[str] = None
+    application_start_date: Optional[datetime] = None
+    application_end_date: Optional[datetime] = None
     deadline: Optional[datetime] = None
     status: str = Field(pattern="^(draft|published|closed|archived)$", default="published")
+    is_active: bool = True
     source_name: str = "Campus Placement"
     source_url: Optional[str] = None
 
@@ -107,8 +110,11 @@ class JobUpdate(BaseModel):
     preferred_skills: Optional[List[str]] = None
     package_details: Optional[Union[Dict[str, Any], str]] = None
     application_url: Optional[str] = None
+    application_start_date: Optional[datetime] = None
+    application_end_date: Optional[datetime] = None
     deadline: Optional[datetime] = None
     status: Optional[str] = Field(default=None, pattern="^(draft|published|closed|archived)$")
+    is_active: Optional[bool] = None
 
 
 class JobResponse(BaseModel):
@@ -127,8 +133,11 @@ class JobResponse(BaseModel):
     preferred_skills: List[str]
     package_details: Optional[Union[Dict[str, Any], str]] = None
     application_url: Optional[str] = None
+    application_start_date: Optional[datetime] = None
+    application_end_date: Optional[datetime] = None
     deadline: Optional[datetime] = None
     status: str
+    is_active: bool = True
     source_name: str
     source_url: Optional[str] = None
     created_at: datetime
