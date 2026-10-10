@@ -177,7 +177,7 @@ export default function RecruiterDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
               <span>Active Job Drives</span>
               <Briefcase className="w-4 h-4 text-blue-600" />
@@ -186,7 +186,7 @@ export default function RecruiterDashboard() {
             <p className="text-xs text-slate-500 font-medium">Accepting student applications</p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
               <span>Total Applicants</span>
               <Users className="w-4 h-4 text-blue-600" />
@@ -195,7 +195,7 @@ export default function RecruiterDashboard() {
             <p className="text-xs text-emerald-600 font-semibold">100% verified academic records</p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
               <span>Shortlisted Candidates</span>
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -204,7 +204,7 @@ export default function RecruiterDashboard() {
             <p className="text-xs text-slate-500 font-medium">Diagnostic pass rate 88%</p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
               <span>Academic Pre-Gating</span>
               <ShieldCheck className="w-4 h-4 text-amber-500" />
