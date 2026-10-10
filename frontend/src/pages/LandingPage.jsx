@@ -31,6 +31,15 @@ import {
   Globe 
 } from 'lucide-react';
 import studentImg from '../assets/student_thinking.jpg';
+import AspireLogo from '../components/AspireLogo';
+import { 
+  GoogleLogo, 
+  MicrosoftLogo, 
+  AmazonLogo, 
+  MetaLogo, 
+  AppleLogo, 
+  NetflixLogo 
+} from '../components/CompanyLogos';
 
 export const LandingPage = ({ onNavigate, onOpenAuth }) => {
   const [emailInput, setEmailInput] = useState('');
@@ -129,8 +138,15 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                 </svg>
               </div>
 
-              {/* Floating 3D/Isometric Style Mockup Card */}
-              <div className="relative rounded-2xl bg-white border border-slate-200/80 shadow-2xl overflow-hidden transition-all duration-300 hover:shadow-blue-500/10">
+              {/* Floating 3D/Animated Mockup Card */}
+              <div className="relative rounded-3xl bg-white border border-slate-200/90 shadow-2xl overflow-hidden animate-welcome-card animate-glow-card transition-all duration-300 hover:shadow-blue-500/20">
+                {/* Top Floating AI Pill */}
+                <div className="absolute top-3 right-4 z-10 px-2.5 py-0.5 rounded-full bg-blue-600/90 text-white text-[10px] font-bold flex items-center gap-1 shadow-sm backdrop-blur-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  Live AI Engine
+                </div>
+
                 {/* Browser Header Bar */}
                 <div className="px-4 py-2.5 bg-slate-100/80 border-b border-slate-200/80 flex items-center justify-between">
                   <div className="flex items-center space-x-1.5">
@@ -156,26 +172,26 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                         Keep going! You're <span className="text-blue-600 font-bold">85% ready</span> for your target roles.
                       </p>
                     </div>
-                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-xs">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-md shadow-blue-600/30">
                       A
                     </div>
                   </div>
 
                   {/* 4 Top Metric Cards */}
                   <div className="grid grid-cols-4 gap-2">
-                    <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100 text-left">
+                    <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100/80 text-left hover:scale-105 transition-transform">
                       <span className="text-[10px] font-medium text-slate-500 block">Matching Jobs</span>
                       <span className="text-lg font-bold text-blue-700">32</span>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-purple-50/60 border border-purple-100 text-left">
+                    <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-100/80 text-left hover:scale-105 transition-transform">
                       <span className="text-[10px] font-medium text-slate-500 block">Mock Tests</span>
                       <span className="text-lg font-bold text-purple-700">12</span>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-100 text-left">
+                    <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-100/80 text-left hover:scale-105 transition-transform">
                       <span className="text-[10px] font-medium text-slate-500 block">Avg. Score</span>
                       <span className="text-lg font-bold text-amber-600">78%</span>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-left">
+                    <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100/80 text-left hover:scale-105 transition-transform">
                       <span className="text-[10px] font-medium text-slate-500 block">Resume Readiness</span>
                       <span className="text-lg font-bold text-emerald-600">85%</span>
                     </div>
@@ -184,9 +200,12 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                   {/* Skill Progress Graph Card */}
                   <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-800">Your Skill Progress</span>
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        +28% this month
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Activity className="w-3.5 h-3.5 text-blue-600" />
+                        Your Skill Progress
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                        +28% this month ⚡
                       </span>
                     </div>
                     {/* SVG Chart */}
@@ -194,8 +213,8 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                       <svg className="w-full h-full" viewBox="0 0 300 70" preserveAspectRatio="none">
                         <defs>
                           <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
-                            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.35" />
+                            <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
                           </linearGradient>
                         </defs>
                         <path d="M0,50 Q40,45 80,35 T160,28 T240,15 T300,8 L300,70 L0,70 Z" fill="url(#chartGrad)" />
@@ -203,7 +222,7 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                         <circle cx="80" cy="35" r="3" fill="#2563eb" />
                         <circle cx="160" cy="28" r="3" fill="#2563eb" />
                         <circle cx="240" cy="15" r="3" fill="#2563eb" />
-                        <circle cx="300" cy="8" r="4" fill="#2563eb" />
+                        <circle cx="300" cy="8" r="4.5" fill="#2563eb" className="animate-pulse" />
                       </svg>
                     </div>
                     <div className="flex justify-between text-[9px] text-slate-400 font-medium px-1">
@@ -215,11 +234,11 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-slate-700 block">Recommended for You</span>
                     
-                    {/* Job Item 1 */}
-                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+                    {/* Job Item 1: Google */}
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-blue-300 transition-colors">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-red-50 text-red-600 font-bold text-xs flex items-center justify-center">
-                          G
+                        <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-1.5 shrink-0">
+                          <GoogleLogo className="w-5 h-5" />
                         </div>
                         <div className="text-left">
                           <h4 className="text-xs font-bold text-slate-900">Google • SWE Intern</h4>
@@ -232,18 +251,18 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                         </span>
                         <button
                           onClick={() => onNavigate('jobs')}
-                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition"
+                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition shadow-xs"
                         >
                           Apply Now
                         </button>
                       </div>
                     </div>
 
-                    {/* Job Item 2 */}
-                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+                    {/* Job Item 2: Microsoft */}
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-blue-300 transition-colors">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 font-bold text-xs flex items-center justify-center">
-                          M
+                        <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-1.5 shrink-0">
+                          <MicrosoftLogo className="w-4 h-4" />
                         </div>
                         <div className="text-left">
                           <h4 className="text-xs font-bold text-slate-900">Microsoft • SDE I</h4>
@@ -256,18 +275,18 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                         </span>
                         <button
                           onClick={() => onNavigate('jobs')}
-                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition"
+                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition shadow-xs"
                         >
                           Apply Now
                         </button>
                       </div>
                     </div>
 
-                    {/* Job Item 3 */}
-                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between">
+                    {/* Job Item 3: Amazon */}
+                    <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-between hover:border-blue-300 transition-colors">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 font-bold text-xs flex items-center justify-center">
-                          A
+                        <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center p-1.5 shrink-0">
+                          <AmazonLogo className="w-5 h-5" />
                         </div>
                         <div className="text-left">
                           <h4 className="text-xs font-bold text-slate-900">Amazon • Software Dev Engineer</h4>
@@ -280,7 +299,7 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                         </span>
                         <button
                           onClick={() => onNavigate('jobs')}
-                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition"
+                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold transition shadow-xs"
                         >
                           Apply Now
                         </button>
@@ -296,38 +315,51 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
         </div>
       </section>
 
-      {/* 2. COMPANY LOGO / TRUST BAR */}
-      <section className="py-12 bg-white border-y border-slate-200/70">
+      {/* 2. COMPANY LOGO / TRUST BAR WITH REAL VECTOR LOGOS */}
+      <section className="py-12 bg-white border-y border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Prepare for opportunities at top companies
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Prepare for opportunities at top global technology companies
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-14 opacity-75 grayscale hover:grayscale-0 transition-all duration-300">
-            <span className="text-xl font-bold text-slate-700 tracking-tight flex items-center gap-1">
-              <span className="text-blue-500">G</span><span className="text-red-500">o</span><span className="text-amber-500">o</span><span className="text-blue-500">g</span><span className="text-green-500">l</span><span className="text-red-500">e</span>
-            </span>
-            <span className="text-lg font-bold text-slate-700 flex items-center gap-1.5">
-              <span className="inline-grid grid-cols-2 gap-0.5 w-4 h-4">
-                <span className="bg-red-500"></span><span className="bg-green-500"></span><span className="bg-blue-500"></span><span className="bg-amber-500"></span>
-              </span>
-              Microsoft
-            </span>
-            <span className="text-xl font-black text-slate-800 tracking-tight lowercase">
-              amazon
-            </span>
-            <span className="text-lg font-extrabold text-red-600 tracking-wider uppercase">
-              Adobe
-            </span>
-            <span className="text-lg font-bold text-blue-700 tracking-normal">
-              Infosys
-            </span>
-            <span className="text-lg font-extrabold text-slate-800 tracking-tight">
-              tcs <span className="text-[9px] font-medium text-slate-400 block uppercase">Tata Consultancy</span>
-            </span>
-            <span className="text-lg font-bold text-slate-800 tracking-tight">
-              accenture
-            </span>
+          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 md:gap-16">
+            
+            {/* Google */}
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all hover:scale-105 cursor-default group">
+              <GoogleLogo className="h-6 w-6" />
+              <span className="text-base font-bold text-slate-700 group-hover:text-slate-900 tracking-tight">Google</span>
+            </div>
+
+            {/* Microsoft */}
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all hover:scale-105 cursor-default group">
+              <MicrosoftLogo className="h-5 w-5" />
+              <span className="text-base font-bold text-slate-700 group-hover:text-slate-900 tracking-tight">Microsoft</span>
+            </div>
+
+            {/* Amazon */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all hover:scale-105 cursor-default group">
+              <AmazonLogo className="h-6 w-6" />
+              <span className="text-lg font-black text-slate-800 tracking-tight lowercase">amazon</span>
+            </div>
+
+            {/* Meta */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all hover:scale-105 cursor-default group">
+              <MetaLogo className="h-5 w-5" />
+              <span className="text-base font-bold text-blue-600 tracking-tight">Meta</span>
+            </div>
+
+            {/* Apple */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all hover:scale-105 cursor-default group">
+              <AppleLogo className="h-5 w-5" />
+              <span className="text-base font-bold text-slate-800 tracking-tight">Apple</span>
+            </div>
+
+            {/* Netflix */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 transition-all hover:scale-105 cursor-default group">
+              <NetflixLogo className="h-5 w-5" />
+              <span className="text-base font-black text-red-600 tracking-wider">NETFLIX</span>
+            </div>
+
           </div>
         </div>
       </section>
@@ -353,7 +385,7 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
 
               {/* 5 Thought Questions Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+                <div className="card-3d p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <Building2 className="w-4 h-4" />
                   </div>
@@ -362,7 +394,7 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+                <div className="card-3d p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                     <Activity className="w-4 h-4" />
                   </div>
@@ -371,7 +403,7 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+                <div className="card-3d p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
                     <Target className="w-4 h-4" />
                   </div>
@@ -380,7 +412,7 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
+                <div className="card-3d p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                     <FileText className="w-4 h-4" />
                   </div>
@@ -389,7 +421,7 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
                   </span>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3 sm:col-span-2">
+                <div className="card-3d p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3 sm:col-span-2">
                   <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                     <Compass className="w-4 h-4" />
                   </div>
@@ -456,59 +488,59 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
             </p>
           </div>
 
-          {/* 5-Step Horizontal Flow */}
+          {/* 5-Step Horizontal Flow with 3D Hover */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative">
             
             {/* Step 1 */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group hover:border-blue-300 transition">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+            <div className="card-3d p-5 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold transition-transform duration-300 group-hover:scale-110">
                 <Search className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">1. Build Your Profile</h3>
+              <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">1. Build Your Profile</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Add your academic details, skills, projects and career preferences.
               </p>
             </div>
 
             {/* Step 2 */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group hover:border-emerald-300 transition">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+            <div className="card-3d p-5 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold transition-transform duration-300 group-hover:scale-110">
                 <Briefcase className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">2. Discover Opportunities</h3>
+              <h3 className="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">2. Discover Opportunities</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Find relevant jobs based on eligibility, skills and your interests.
               </p>
             </div>
 
             {/* Step 3 */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group hover:border-rose-300 transition">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
+            <div className="card-3d p-5 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold transition-transform duration-300 group-hover:scale-110">
                 <Target className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">3. Prepare & Practice</h3>
+              <h3 className="text-sm font-bold text-slate-900 group-hover:text-rose-600 transition-colors">3. Prepare & Practice</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Take company-specific mock tests and track your performance.
               </p>
             </div>
 
             {/* Step 4 */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group hover:border-indigo-300 transition">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold">
+            <div className="card-3d p-5 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-bold transition-transform duration-300 group-hover:scale-110">
                 <BarChart3 className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">4. Improve with Insights</h3>
+              <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">4. Improve with Insights</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Get skill-gap reports and personalized learning roadmaps.
               </p>
             </div>
 
             {/* Step 5 */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group hover:border-blue-300 transition">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold">
+            <div className="card-3d p-5 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs flex flex-col items-center text-center space-y-3 relative group">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold transition-transform duration-300 group-hover:scale-110">
                 <GraduationCap className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-bold text-slate-900">5. Get Placement Ready</h3>
+              <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">5. Get Placement Ready</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Create tailored resumes and track your applications.
               </p>
@@ -535,102 +567,127 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
           </div>
 
           {/* 6 Feature Cards Grid */}
+          {/* 6 Feature Cards Grid with 3D Hover Effect */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
             
             {/* Feature 1 */}
             <div 
               onClick={() => onNavigate('jobs')}
-              className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer space-y-3.5 group"
+              className="card-3d p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs cursor-pointer space-y-4 group relative overflow-hidden"
             >
-              <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <Briefcase className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white shadow-xs">
+                <Briefcase className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                 Intelligent Job Discovery
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Find jobs and internships based on your eligibility, skills, location and salary expectations.
+                Find jobs and internships based on your eligibility, skills, location and salary expectations with AI matching.
               </p>
+              <div className="pt-1 flex items-center text-xs font-bold text-blue-600 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+                <span>Explore Jobs</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Feature 2 */}
             <div 
               onClick={() => onNavigate('mock-tests')}
-              className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer space-y-3.5 group"
+              className="card-3d p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs cursor-pointer space-y-4 group relative overflow-hidden"
             >
-              <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <FileText className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white shadow-xs">
+                <FileText className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
                 Company-Specific Mock Tests
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Practise with AI-generated tests tailored to real company patterns and role requirements.
               </p>
+              <div className="pt-1 flex items-center text-xs font-bold text-indigo-600 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+                <span>Start Practice</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Feature 3 */}
             <div 
               onClick={() => onNavigate('skill-gaps')}
-              className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer space-y-3.5 group"
+              className="card-3d p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs cursor-pointer space-y-4 group relative overflow-hidden"
             >
-              <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white shadow-xs">
+                <BarChart3 className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
                 Skill Gap Analysis
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Understand your strengths and weaknesses with detailed performance reports and improvement suggestions.
               </p>
+              <div className="pt-1 flex items-center text-xs font-bold text-amber-600 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+                <span>Analyze Gaps</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Feature 4 */}
             <div 
               onClick={() => onNavigate('resumes')}
-              className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer space-y-3.5 group"
+              className="card-3d p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs cursor-pointer space-y-4 group relative overflow-hidden"
             >
-              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <FileText className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white shadow-xs">
+                <FileText className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
                 AI-Assisted Resume Builder
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Create professional, job-specific resumes that highlight your relevant skills, projects and achievements.
               </p>
+              <div className="pt-1 flex items-center text-xs font-bold text-emerald-600 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+                <span>Build Resume</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Feature 5 */}
             <div 
               onClick={() => onNavigate('roadmaps')}
-              className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer space-y-3.5 group"
+              className="card-3d p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs cursor-pointer space-y-4 group relative overflow-hidden"
             >
-              <div className="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                <BookOpen className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white shadow-xs">
+                <BookOpen className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-purple-600 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-purple-600 transition-colors">
                 Personalized Career Roadmap
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Get a structured learning plan with curated resources to bridge your skill gaps.
               </p>
+              <div className="pt-1 flex items-center text-xs font-bold text-purple-600 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+                <span>View Roadmaps</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Feature 6 */}
             <div 
               onClick={() => onNavigate('jobs')}
-              className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-md hover:border-cyan-300 transition-all cursor-pointer space-y-3.5 group"
+              className="card-3d p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs cursor-pointer space-y-4 group relative overflow-hidden"
             >
-              <div className="w-11 h-11 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
-                <Compass className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-cyan-600 group-hover:text-white shadow-xs">
+                <Compass className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 group-hover:text-cyan-600 transition">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-cyan-600 transition-colors">
                 Application Tracking
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
                 Manage your applications, track progress and stay updated on deadlines and opportunities.
               </p>
+              <div className="pt-1 flex items-center text-xs font-bold text-cyan-600 gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0">
+                <span>Track Status</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
             </div>
 
           </div>
@@ -656,11 +713,11 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
             
             {/* Card 1 */}
-            <div className="p-7 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+            <div className="card-3d p-7 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs space-y-3 group">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
                 <Lightbulb className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                 Guidance for Every Student
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -669,11 +726,11 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
             </div>
 
             {/* Card 2 */}
-            <div className="p-7 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+            <div className="card-3d p-7 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs space-y-3 group">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
                 <Users className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">
                 Actionable Insights
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -682,11 +739,11 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
             </div>
 
             {/* Card 3 */}
-            <div className="p-7 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+            <div className="card-3d p-7 rounded-3xl bg-slate-50 border border-slate-200/80 shadow-xs space-y-3 group">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
                 Student-Centered Approach
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed">
@@ -750,14 +807,11 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
             
             {/* Logo & Description */}
             <div className="md:col-span-4 space-y-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
-                  ▲
-                </div>
-                <div>
-                  <span className="text-lg font-bold text-slate-900 tracking-tight block">ASPIRE</span>
-                  <span className="text-[9px] text-slate-400 block -mt-1 font-medium">Your Career, Our Intelligence</span>
-                </div>
+              <div 
+                className="cursor-pointer inline-block"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                <AspireLogo size="md" />
               </div>
               <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
                 An AI-powered placement and career intelligence platform to help students discover, prepare and achieve their career goals.
