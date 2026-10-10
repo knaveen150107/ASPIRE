@@ -315,6 +315,14 @@ class ApiClient {
     return res.data || [];
   }
 
+  async createRecruiter(recruiterData) {
+    const res = await this.request('/users/recruiters', {
+      method: 'POST',
+      body: JSON.stringify(recruiterData),
+    });
+    return res.data;
+  }
+
   async updateUserStatus(userId, isActive) {
     const res = await this.request(`/users/${userId}/status?is_active=${isActive}`, {
       method: 'PUT',
