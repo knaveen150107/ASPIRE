@@ -54,10 +54,12 @@ export const AppleLogo = ({ className = "h-5 w-auto", fill = "#111827" }) => (
   </svg>
 );
 
-// Netflix Official Wordmark
+// Netflix
 export const NetflixLogo = ({ className = "h-5 w-auto" }) => (
-  <svg className={className} viewBox="0 0 111 30" fill="#E50914">
-    <path d="M105.06 14.18L111 30c-1.8-.25-3.67-.42-5.54-.52l-3.32-8.58-3.35 8.35c-1.7-.07-3.41-.1-5.12-.08l5.85-14.88-5.52-13.89h5.18l3.16 8.34 3.2-8.34h5.25l-5.68 14.2zM80.08 0h4.94v29.53c-1.64.04-3.29.11-4.94.22V0zM68.76 4.96h-6.7V0h18.34v4.96h-6.7v24.78c-1.64.1-3.29.23-4.94.39V4.96zM50.4 10.37h5.83v4.69H50.4v9.64h7.52v4.86c-4.14.3-8.31.67-12.46 1.1V0h13.7v4.96H50.4v5.41zM34.7 0h4.94v29.12c-1.64.16-3.28.34-4.94.55V0zM14.73 0h5.18v28.87c-1.74.24-3.47.51-5.18.82V14.18L8.88 29.98c-1.75.34-3.5.71-5.26 1.11V0h5.18v15.22L14.73 0z" />
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M4 2h4v20H4z" fill="#B81D24" />
+    <path d="M16 2h4v20h-4z" fill="#B81D24" />
+    <path d="M4 2h4.5l11.5 20h-4.5L4 2z" fill="#E50914" />
   </svg>
 );
 
