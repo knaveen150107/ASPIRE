@@ -10,7 +10,13 @@ import {
   RefreshCw, 
   Lock, 
   Unlock,
-  Server
+  Server,
+  UserPlus,
+  Building2,
+  X,
+  Mail,
+  KeyRound,
+  Briefcase
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../context/ToastContext';
@@ -23,6 +29,17 @@ export const AdminPage = () => {
   const [roleFilter, setRoleFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [systemHealth, setSystemHealth] = useState(null);
+
+  // Recruiter creation state
+  const [isCreateRecruiterOpen, setIsCreateRecruiterOpen] = useState(false);
+  const [recruiterForm, setRecruiterForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    company_name: '',
+    designation: 'Talent Acquisition Lead'
+  });
+  const [creatingRecruiter, setCreatingRecruiter] = useState(false);
 
   const toast = useToast();
 
@@ -63,6 +80,34 @@ export const AdminPage = () => {
     }
   };
 
+  const handleCreateRecruiter = async (e) => {
+    e.preventDefault();
+    if (!recruiterForm.name || !recruiterForm.email || !recruiterForm.password) {
+      toast.error('Please provide name, email, and password');
+      return;
+    }
+
+    setCreatingRecruiter(true);
+    try {
+      await api.createRecruiter(recruiterForm);
+      toast.success(`Recruiter account for ${recruiterForm.name} created successfully!`);
+      setIsCreateRecruiterOpen(false);
+      setRecruiterForm({
+        name: '',
+        email: '',
+        password: '',
+        company_name: '',
+        designation: 'Talent Acquisition Lead'
+      });
+      // Reload users list
+      loadData();
+    } catch (err) {
+      toast.error(err.message || 'Failed to create recruiter account');
+    } finally {
+      setCreatingRecruiter(false);
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const q = searchQuery.toLowerCase();
     return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
@@ -73,7 +118,7 @@ export const AdminPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Banner */}
-        <div className="rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
+        <div className="card-3d rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
@@ -84,17 +129,27 @@ export const AdminPage = () => {
                 System Governance & User Operations
               </h1>
               <p className="text-slate-500 text-xs sm:text-sm max-w-2xl font-normal">
-                Audit system events, manage student & recruiter directory permissions, and inspect MongoDB cluster telemetry.
+                Audit system events, provision recruiter accounts, manage student directory permissions, and inspect MongoDB cluster telemetry.
               </p>
             </div>
 
-            <button
-              onClick={loadData}
-              className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center gap-2"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Refresh Console
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsCreateRecruiterOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 active:scale-95"
+              >
+                <UserPlus className="w-4 h-4" />
+                Create Recruiter
+              </button>
+
+              <button
+                onClick={loadData}
+                className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center gap-2"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
           </div>
 
           {/* Tab Navigation */}
@@ -139,7 +194,7 @@ export const AdminPage = () => {
 
         {/* Tab 1: Users Table */}
         {activeTab === 'users' && (
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
             
             {/* Filter & Search Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -165,6 +220,14 @@ export const AdminPage = () => {
                   <option value="recruiter">Recruiters Only</option>
                   <option value="admin">Administrators</option>
                 </select>
+
+                <button
+                  onClick={() => setIsCreateRecruiterOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>+ Add Recruiter</span>
+                </button>
               </div>
             </div>
 
@@ -242,7 +305,7 @@ export const AdminPage = () => {
 
         {/* Tab 2: Security Audit Logs */}
         {activeTab === 'audit' && (
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Activity className="w-5 h-5 text-blue-600" />
               Real-Time Security & Action Audit Trail
@@ -286,7 +349,7 @@ export const AdminPage = () => {
         {/* Tab 3: Database & Cluster Health */}
         {activeTab === 'system' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+            <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                 <Database className="w-5 h-5" />
               </div>
@@ -307,7 +370,7 @@ export const AdminPage = () => {
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+            <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
                 <Server className="w-5 h-5" />
               </div>
@@ -328,7 +391,7 @@ export const AdminPage = () => {
               </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+            <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
               <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
                 <Activity className="w-5 h-5" />
               </div>
@@ -352,8 +415,157 @@ export const AdminPage = () => {
         )}
 
       </div>
+
+      {/* CREATE RECRUITER MODAL */}
+      {isCreateRecruiterOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="relative w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-8 shadow-2xl space-y-6">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900">Create New Recruiter</h3>
+                  <p className="text-xs text-slate-500">Provision hiring manager or HR partner account</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCreateRecruiterOpen(false)}
+                className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCreateRecruiter} className="space-y-4">
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Recruiter Full Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <UserPlus className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    placeholder="e.g. Sarah Jenkins"
+                    value={recruiterForm.name}
+                    onChange={(e) => setRecruiterForm({ ...recruiterForm, name: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-600 transition"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Official Work Email <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="email"
+                    placeholder="sarah.jenkins@company.com"
+                    value={recruiterForm.email}
+                    onChange={(e) => setRecruiterForm({ ...recruiterForm, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-600 transition"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Initial Password <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={recruiterForm.password}
+                    onChange={(e) => setRecruiterForm({ ...recruiterForm, password: e.target.value })}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-600 transition"
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Company / Organization
+                  </label>
+                  <div className="relative">
+                    <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Microsoft / Google"
+                      value={recruiterForm.company_name}
+                      onChange={(e) => setRecruiterForm({ ...recruiterForm, company_name: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-600 transition"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Designation / Title
+                  </label>
+                  <div className="relative">
+                    <Briefcase className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      placeholder="e.g. Lead Tech Recruiter"
+                      value={recruiterForm.designation}
+                      onChange={(e) => setRecruiterForm({ ...recruiterForm, designation: e.target.value })}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-blue-600 transition"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateRecruiterOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingRecruiter}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 active:scale-95"
+                >
+                  {creatingRecruiter ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      <span>Creating Account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      <span>Provision Recruiter</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
 
 export default AdminPage;
+
