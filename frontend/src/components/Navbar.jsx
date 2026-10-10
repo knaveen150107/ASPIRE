@@ -1,74 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   User, 
   LogOut, 
   LogIn, 
   Menu, 
   X, 
-  ChevronRight,
-  ShieldCheck
+  ChevronRight 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
 import AspireLogo from './AspireLogo';
 
 export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal, onOpenAuth }) => {
   const navigate = onNavigate || setCurrentView;
   const triggerAuth = onOpenAuth || openAuthModal;
   const { user, role, isAuthenticated, logout } = useAuth();
-  const [dbHealthy, setDbHealthy] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    api.checkHealth()
-      .then((res) => setDbHealthy(res.database_connected))
-      .catch(() => setDbHealthy(false));
-  }, []);
-
-  const navItems = [
-    { id: 'landing', label: 'Home', public: true },
-    { id: 'features', label: 'Features', public: true, isAnchor: true },
-    { id: 'jobs', label: 'Job Discovery', public: true },
-    { id: 'mock-tests', label: 'Mock Tests', public: true },
+  // Authenticated Portal Navigation Items
+  const authenticatedNavItems = [
+    { id: 'jobs', label: 'Job Discovery', studentOnly: true },
+    { id: 'mock-tests', label: 'Mock Tests', studentOnly: true },
     { id: 'skill-gaps', label: 'Skill Analysis', studentOnly: true },
     { id: 'roadmaps', label: 'Career Roadmaps', studentOnly: true },
     { id: 'resumes', label: 'AI Resumes', studentOnly: true },
-    { id: 'dashboard', label: 'For Students', studentOnly: true },
+    { id: 'dashboard', label: 'Student Portal', studentOnly: true },
     { id: 'recruiter', label: 'Recruiter Hub', recruiterOnly: true },
     { id: 'admin', label: 'Admin Portal', adminOnly: true },
   ];
 
-  const visibleNav = navItems.filter((item) => {
-    if (item.public) return true;
+  const visibleNav = isAuthenticated ? authenticatedNavItems.filter((item) => {
     if (item.studentOnly && role === 'student') return true;
     if (item.recruiterOnly && role === 'recruiter') return true;
     if (item.adminOnly && role === 'admin') return true;
     return false;
-  });
-
-  const handleNavClick = (item) => {
-    if (item.isAnchor) {
-      if (currentView !== 'landing') {
-        navigate('landing');
-        setTimeout(() => {
-          const el = document.getElementById('features-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
-      } else {
-        const el = document.getElementById('features-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }
-    } else {
-      navigate(item.id);
-    }
-  };
+  }) : [];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Global Brand Logo */}
+          {/* Left: Global Brand Logo */}
           <div 
             className="cursor-pointer"
             onClick={() => navigate('landing')}
@@ -76,28 +48,30 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
             <AspireLogo size="md" />
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
-            {visibleNav.map((item) => {
-              const isActive = currentView === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'text-blue-600 bg-blue-50 font-bold shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+          {/* Center: Authenticated Navigation Links (Only visible when signed in) */}
+          {isAuthenticated && visibleNav.length > 0 && (
+            <nav className="hidden md:flex items-center space-x-1">
+              {visibleNav.map((item) => {
+                const isActive = currentView === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.id)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'text-blue-600 bg-blue-50 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
 
-          {/* User Controls & Status */}
-          <div className="hidden md:flex items-center space-x-3">
+          {/* Right: User Controls & Login / Register Buttons */}
+          <div className="flex items-center space-x-3">
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
                 <div 
@@ -122,10 +96,10 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2.5">
                 <button
                   onClick={() => triggerAuth('login')}
-                  className="px-3.5 py-2 rounded-xl text-slate-700 hover:text-slate-900 text-xs font-bold transition"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all active:scale-95"
                 >
                   Sign In
                 </button>
@@ -134,27 +108,29 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
                   onClick={() => triggerAuth('register')}
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all active:scale-95"
                 >
-                  Get Started
+                  Register
+                </button>
+              </div>
+            )}
+
+            {/* Mobile Menu Button when Authenticated */}
+            {isAuthenticated && visibleNav.length > 0 && (
+              <div className="flex md:hidden items-center">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900"
+                >
+                  {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
               </div>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center space-x-2">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-slate-100 text-slate-700 hover:text-slate-900"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-
         </div>
       </div>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
+      {/* Mobile Drawer (Authenticated) */}
+      {mobileMenuOpen && isAuthenticated && (
         <div className="md:hidden border-b border-slate-200 bg-white px-4 pt-2 pb-6 space-y-1 shadow-xl animate-fade-in">
           {visibleNav.map((item) => {
             const isActive = currentView === item.id;
@@ -162,7 +138,7 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
               <button
                 key={item.id}
                 onClick={() => {
-                  handleNavClick(item);
+                  navigate(item.id);
                   setMobileMenuOpen(false);
                 }}
                 className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-semibold ${
@@ -175,40 +151,17 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
             );
           })}
 
-          <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
-            {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  logout();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out ({user?.email})</span>
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    triggerAuth('login');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-800 font-bold text-xs"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={() => {
-                    triggerAuth('register');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md"
-                >
-                  Get Started
-                </button>
-              </div>
-            )}
+          <div className="pt-4 border-t border-slate-100">
+            <button
+              onClick={() => {
+                logout();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-semibold"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out ({user?.email})</span>
+            </button>
           </div>
         </div>
       )}
