@@ -157,7 +157,7 @@ class GeminiAgentService:
 
         # Heuristic Deterministic Fallback
         reply = (
-            f"Hello **{student_name}**! 👋\n\n"
+            f"Hello **{student_name}**!\n\n"
             f"Based on your **{department}** background and target role as a **{role_target}** at **{comp_target}**, "
             f"here is targeted guidance tailored to your profile (CGPA: {cgpa}):\n\n"
             f"1. **Core Technical Competencies**: Strengthen your foundation in **{', '.join(skills[:3])}** and bridge high-frequency patterns like Trees, Graphs, and System Design.\n"

@@ -112,21 +112,28 @@ export default function JobsPage({ onNavigate }) {
 
   // Filter jobs
   const filteredJobs = jobs.filter((job) => {
-    const matchesSearch = 
-      job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (job.required_skills && job.required_skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())));
+    const title = job.title || '';
+    const company = job.company_name || '';
+    const desc = job.description || '';
+    const skills = job.required_skills || [];
 
+    const matchesSearch = 
+      title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      skills.some(s => String(s).toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const depts = job.eligible_departments || job.eligibility_criteria?.allowed_departments || [];
     const matchesDept = 
       selectedDept === 'All' || 
-      !job.eligibility_criteria?.allowed_departments ||
-      job.eligibility_criteria.allowed_departments.includes(selectedDept);
+      depts.length === 0 ||
+      depts.some(d => d.toLowerCase().includes(selectedDept.toLowerCase()) || selectedDept.toLowerCase().includes(d.toLowerCase()));
 
+    const degrees = job.eligible_degrees || job.eligibility_criteria?.allowed_degrees || [];
     const matchesDegree = 
       selectedDegree === 'All' || 
-      !job.eligibility_criteria?.allowed_degrees ||
-      job.eligibility_criteria.allowed_degrees.includes(selectedDegree);
+      degrees.length === 0 ||
+      degrees.some(d => d.toLowerCase() === selectedDegree.toLowerCase());
 
     return matchesSearch && matchesDept && matchesDegree;
   });
@@ -185,8 +192,8 @@ export default function JobsPage({ onNavigate }) {
                 <option value="All">All Departments</option>
                 <option value="Computer Science">Computer Science</option>
                 <option value="Information Technology">Information Technology</option>
-                <option value="Electronics & Communication">Electronics & Communication</option>
-                <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Artificial Intelligence">AI & Data Science</option>
               </select>
             </div>
 
@@ -229,13 +236,16 @@ export default function JobsPage({ onNavigate }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredJobs.map((job) => {
-              const hasApplied = myAppliedJobIds.has(job._id);
-              const minCgpa = job.eligibility_criteria?.min_cgpa || 0;
-              const maxBacklogs = job.eligibility_criteria?.max_backlogs_allowed ?? 0;
+              const jobId = job.id || job._id;
+              const hasApplied = myAppliedJobIds.has(jobId);
+              const minCgpa = job.min_cgpa ?? job.eligibility_criteria?.min_cgpa ?? 0;
+              const maxBacklogs = job.max_backlogs ?? job.eligibility_criteria?.max_backlogs_allowed ?? 0;
+              const salaryDisplay = (typeof job.package_details === 'string' ? job.package_details : null) || job.salary_range || 'Competitive Package';
+              const jobTypeDisplay = (job.employment_type ? job.employment_type.replace('_', ' ') : null) || job.job_type || 'Full Time';
 
               return (
                 <div
-                  key={job._id}
+                  key={jobId}
                   className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between group shadow-xs"
                 >
                   <div>
@@ -256,8 +266,8 @@ export default function JobsPage({ onNavigate }) {
                         </div>
                       </div>
 
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                        {job.job_type || 'Full Time'}
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 capitalize">
+                        {jobTypeDisplay}
                       </span>
                     </div>
 
@@ -267,10 +277,10 @@ export default function JobsPage({ onNavigate }) {
                         <MapPin className="w-3.5 h-3.5" />
                         {job.location || 'Remote / Hybrid'}
                       </span>
-                      {job.salary_range && (
+                      {salaryDisplay && (
                         <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
                           <DollarSign className="w-3.5 h-3.5" />
-                          {job.salary_range}
+                          {salaryDisplay}
                         </span>
                       )}
                     </div>

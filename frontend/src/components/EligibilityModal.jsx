@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import AspireLogo from './AspireLogo';
 
 export const EligibilityModal = ({ job, jobId, jobTitle, companyName, isOpen = true, onClose, onApplyClick, onApplySuccess }) => {
-  const actualJobId = jobId || job?._id;
+  const actualJobId = jobId || job?.id || job?._id;
   const actualJobTitle = jobTitle || job?.title || 'Position';
   const actualCompanyName = companyName || job?.company_name || 'Enterprise Partner';
   const isModalOpen = isOpen !== false;
