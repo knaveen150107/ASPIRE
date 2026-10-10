@@ -151,7 +151,7 @@ def create_recruiter_by_admin(
     })
 
     # Log audit event
-    admin_obj_id = ObjectId(admin_user["id"]) if ObjectId.is_valid(admin_user.get("id", "")) else None
+    admin_obj_id = admin_user.get("_id") or (ObjectId(admin_user["id"]) if admin_user.get("id") and ObjectId.is_valid(admin_user["id"]) else None)
     db["audit_logs"].insert_one({
         "user_id": admin_obj_id,
         "action": "ADMIN_CREATE_RECRUITER",
@@ -202,7 +202,7 @@ def update_user_status(
     )
 
     # Log audit event
-    admin_obj_id = ObjectId(admin_user["id"]) if ObjectId.is_valid(admin_user.get("id", "")) else None
+    admin_obj_id = admin_user.get("_id") or (ObjectId(admin_user["id"]) if admin_user.get("id") and ObjectId.is_valid(admin_user["id"]) else None)
     db["audit_logs"].insert_one({
         "user_id": admin_obj_id,
         "action": "ADMIN_UNBLOCK_USER" if is_active else "ADMIN_BLOCK_USER",
@@ -246,7 +246,7 @@ def delete_user_by_admin(
     db["resumes"].delete_many({"$or": [{"student_id": u_obj_id}, {"student_id": user_id}]})
 
     # Log audit event
-    admin_obj_id = ObjectId(admin_user["id"]) if ObjectId.is_valid(admin_user.get("id", "")) else None
+    admin_obj_id = admin_user.get("_id") or (ObjectId(admin_user["id"]) if admin_user.get("id") and ObjectId.is_valid(admin_user["id"]) else None)
     db["audit_logs"].insert_one({
         "user_id": admin_obj_id,
         "action": "ADMIN_DELETE_USER",
