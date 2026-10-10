@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, Lock, Mail, User, GraduationCap, Building2, ShieldCheck, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Lock, Mail, User, GraduationCap, Building2, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { api } from '../services/api';
 import AspireLogo from './AspireLogo';
 
 export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initialTab, onSuccess }) => {
@@ -11,29 +12,41 @@ export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initi
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [justRegisteredMsg, setJustRegisteredMsg] = useState(null);
 
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const toast = useToast();
+
+  useEffect(() => {
+    if (initialTab || initialMode) {
+      setMode(initialTab || initialMode);
+      setJustRegisteredMsg(null);
+    }
+  }, [initialTab, initialMode, isOpen]);
 
   if (isOpen === false) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setJustRegisteredMsg(null);
 
     try {
-      let userData;
       if (mode === 'login') {
-        userData = await login(email, password);
-        toast.success('Welcome back! Successfully logged in.');
+        const userData = await login(email, password);
+        toast.success(`Welcome back, ${userData?.name || 'Scholar'}!`);
+        if (onSuccess) onSuccess(userData || { role });
+        if (onClose) onClose();
       } else {
-        userData = await register(name, email, password, role);
-        toast.success(`Account created successfully as ${role}!`);
+        // Register account
+        await api.register(name, email, password, role);
+        toast.success(`Account created successfully as ${role}! Please sign in.`);
+        setJustRegisteredMsg(`Your ${role} account has been created. Please enter your password to sign in.`);
+        setMode('login');
+        setPassword('');
       }
-      if (onSuccess) onSuccess(userData || { role });
-      if (onClose) onClose();
     } catch (err) {
-      toast.error(err.message || 'Authentication failed. Please check credentials.');
+      toast.error(err.message || 'Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -92,6 +105,14 @@ export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initi
             Create Account
           </button>
         </div>
+
+        {/* Registration Success Banner */}
+        {justRegisteredMsg && (
+          <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2 animate-fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{justRegisteredMsg}</span>
+          </div>
+        )}
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="space-y-4">
