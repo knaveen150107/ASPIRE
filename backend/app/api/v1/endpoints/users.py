@@ -32,8 +32,8 @@ def list_all_users(
             email=u["email"],
             role=u["role"],
             is_active=u.get("is_active", True),
-            created_at=u.get("created_at", datetime.utcnow()),
-            updated_at=u.get("updated_at", datetime.utcnow()),
+            created_at=u.get("created_at", datetime.now()),
+            updated_at=u.get("updated_at", datetime.now()),
         )
         for u in cursor
     ]
@@ -53,7 +53,7 @@ def update_user_status(
 
     res = db["users"].update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {"is_active": is_active, "updated_at": datetime.utcnow()}},
+        {"$set": {"is_active": is_active, "updated_at": datetime.now()}},
     )
     if res.matched_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")

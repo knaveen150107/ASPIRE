@@ -29,7 +29,7 @@ def register_user(
             detail="An account with this email address already exists.",
         )
 
-    now = datetime.utcnow()
+    now = datetime.now()
     user_doc = {
         "name": payload.name,
         "email": payload.email.lower(),
@@ -119,7 +119,7 @@ def login_user(
         "entity_type": "users",
         "entity_id": user["_id"],
         "metadata": {},
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(),
     })
 
     token = create_access_token(subject=user["_id"], role=user.get("role", "student"))

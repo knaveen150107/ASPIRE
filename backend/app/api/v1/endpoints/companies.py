@@ -32,8 +32,8 @@ def list_companies(
             industry=c["industry"],
             description=c["description"],
             recruiter_id=str(c["recruiter_id"]),
-            created_at=c.get("created_at", datetime.utcnow()),
-            updated_at=c.get("updated_at", datetime.utcnow()),
+            created_at=c.get("created_at", datetime.now()),
+            updated_at=c.get("updated_at", datetime.now()),
         )
         for c in companies_cursor
     ]
@@ -61,8 +61,8 @@ def get_company_details(
             industry=company["industry"],
             description=company["description"],
             recruiter_id=str(company["recruiter_id"]),
-            created_at=company.get("created_at", datetime.utcnow()),
-            updated_at=company.get("updated_at", datetime.utcnow()),
+            created_at=company.get("created_at", datetime.now()),
+            updated_at=company.get("updated_at", datetime.now()),
         )
     )
 
@@ -78,7 +78,7 @@ def create_company(
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recruiter profile not found.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     doc = {
         "name": payload.name,
         "website": payload.website,
@@ -126,7 +126,7 @@ def update_company(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not manage this company.")
 
     update_fields = payload.model_dump(exclude_unset=True)
-    update_fields["updated_at"] = datetime.utcnow()
+    update_fields["updated_at"] = datetime.now()
 
     db["companies"].update_one({"_id": ObjectId(company_id)}, {"$set": update_fields})
     updated = db["companies"].find_one({"_id": ObjectId(company_id)})

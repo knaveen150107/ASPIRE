@@ -33,7 +33,7 @@ def create_skill_gap_report(
     if not job:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     report_doc = {
         "student_id": profile["_id"],
         "job_id": job_oid,
@@ -115,7 +115,7 @@ def list_my_skill_gap_reports(
                     current_level=g.get("current_level", "none"),
                     target_level=g.get("target_level", "intermediate"),
                     priority=g.get("priority", "high"),
-                    created_at=g.get("created_at", datetime.utcnow()),
+                    created_at=g.get("created_at", datetime.now()),
                 )
             )
 
@@ -128,7 +128,7 @@ def list_my_skill_gap_reports(
                 readiness_score=r.get("readiness_score", 0.0),
                 summary=r.get("summary", ""),
                 gaps=gap_items,
-                generated_at=r.get("generated_at", datetime.utcnow()),
+                generated_at=r.get("generated_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)

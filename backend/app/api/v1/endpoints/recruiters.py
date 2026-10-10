@@ -31,8 +31,8 @@ def get_my_recruiter_profile(
             designation=profile.get("designation", ""),
             organization_email=profile.get("organization_email", ""),
             verified=profile.get("verified", False),
-            created_at=profile.get("created_at", datetime.utcnow()),
-            updated_at=profile.get("updated_at", datetime.utcnow()),
+            created_at=profile.get("created_at", datetime.now()),
+            updated_at=profile.get("updated_at", datetime.now()),
         )
     )
 
@@ -50,7 +50,7 @@ def update_my_recruiter_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recruiter profile not found.")
 
     update_fields = payload.model_dump(exclude_unset=True)
-    update_fields["updated_at"] = datetime.utcnow()
+    update_fields["updated_at"] = datetime.now()
 
     db["recruiter_profiles"].update_one(
         {"_id": profile["_id"]},

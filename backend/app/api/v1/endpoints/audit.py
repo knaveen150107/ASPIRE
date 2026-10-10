@@ -41,7 +41,7 @@ def list_audit_logs(
                 entity_type=log["entity_type"],
                 entity_id=str(log.get("entity_id")),
                 metadata=log.get("metadata"),
-                created_at=log.get("created_at", datetime.utcnow()),
+                created_at=log.get("created_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)

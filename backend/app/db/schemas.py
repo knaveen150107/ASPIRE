@@ -129,8 +129,8 @@ class UserDocument(MongoBaseModel):
     password_hash: str
     role: UserRole
     is_active: bool = True
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class StudentProfileDocument(MongoBaseModel):
@@ -142,8 +142,8 @@ class StudentProfileDocument(MongoBaseModel):
     graduation_year: int
     cgpa: float = Field(ge=0.0, le=10.0)
     profile_summary: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class RecruiterProfileDocument(MongoBaseModel):
@@ -152,16 +152,16 @@ class RecruiterProfileDocument(MongoBaseModel):
     designation: str
     organization_email: str
     verified: bool = False
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class AdminProfileDocument(MongoBaseModel):
     id: Optional[PyObjectId] = Field(default=None, alias="_id")
     user_id: PyObjectId
     permissions: List[str] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class CompanyDocument(MongoBaseModel):
@@ -171,8 +171,8 @@ class CompanyDocument(MongoBaseModel):
     industry: str
     description: str
     recruiter_id: PyObjectId
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class JobDocument(MongoBaseModel):
@@ -194,8 +194,8 @@ class JobDocument(MongoBaseModel):
     status: JobStatus = JobStatus.DRAFT
     source_name: str
     source_url: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class SkillDocument(MongoBaseModel):
@@ -203,7 +203,7 @@ class SkillDocument(MongoBaseModel):
     name: str
     category: str
     description: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class StudentSkillDocument(MongoBaseModel):
@@ -212,7 +212,7 @@ class StudentSkillDocument(MongoBaseModel):
     skill_id: PyObjectId
     proficiency: SkillProficiency
     evidence: Optional[Union[Dict[str, Any], str]] = None
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class JobRequirementDocument(MongoBaseModel):
@@ -222,7 +222,7 @@ class JobRequirementDocument(MongoBaseModel):
     importance: RequirementImportance
     mandatory: bool = True
     minimum_proficiency: SkillProficiency = SkillProficiency.BEGINNER
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class ApplicationDocument(MongoBaseModel):
@@ -230,12 +230,12 @@ class ApplicationDocument(MongoBaseModel):
     student_id: PyObjectId
     job_id: PyObjectId
     resume_id: Optional[PyObjectId] = None
-    applied_at: datetime = Field(default_factory=datetime.utcnow)
+    applied_at: datetime = Field(default_factory=datetime.now)
     status: ApplicationStatus = ApplicationStatus.APPLIED
     source: str
     notes: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class MockTestDocument(MongoBaseModel):
@@ -247,7 +247,7 @@ class MockTestDocument(MongoBaseModel):
     status: MockTestStatus = MockTestStatus.CREATED
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class QuestionOption(MongoBaseModel):
@@ -265,7 +265,7 @@ class TestQuestionDocument(MongoBaseModel):
     correct_answer: Optional[Union[str, List[str], Dict[str, Any]]] = None
     explanation: Optional[str] = None
     marks: float = 1.0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class TopicScore(MongoBaseModel):
@@ -285,7 +285,7 @@ class TestResultDocument(MongoBaseModel):
     correct_count: int = Field(ge=0)
     total_questions: int = Field(ge=0)
     topic_scores: List[TopicScore] = Field(default_factory=list)
-    evaluated_at: datetime = Field(default_factory=datetime.utcnow)
+    evaluated_at: datetime = Field(default_factory=datetime.now)
 
 
 class QuestionResponseDocument(MongoBaseModel):
@@ -295,7 +295,7 @@ class QuestionResponseDocument(MongoBaseModel):
     answer: Optional[Union[str, List[str], Dict[str, Any]]] = None
     is_correct: bool
     marks_awarded: float = 0.0
-    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    submitted_at: datetime = Field(default_factory=datetime.now)
 
 
 class SkillGapReportDocument(MongoBaseModel):
@@ -304,7 +304,7 @@ class SkillGapReportDocument(MongoBaseModel):
     job_id: PyObjectId
     readiness_score: float = Field(ge=0.0, le=100.0)
     summary: str
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=datetime.now)
 
 
 class SkillGapDocument(MongoBaseModel):
@@ -314,7 +314,7 @@ class SkillGapDocument(MongoBaseModel):
     current_level: str
     target_level: str
     priority: RequirementImportance
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class RoadmapDocument(MongoBaseModel):
@@ -324,8 +324,8 @@ class RoadmapDocument(MongoBaseModel):
     title: str
     target_date: Optional[datetime] = None
     status: RoadmapStatus = RoadmapStatus.NOT_STARTED
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class RoadmapStepDocument(MongoBaseModel):
@@ -337,8 +337,8 @@ class RoadmapStepDocument(MongoBaseModel):
     resource_url: Optional[str] = None
     sequence_number: int = Field(ge=1)
     status: StepStatus = StepStatus.PENDING
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class ResumeDocument(MongoBaseModel):
@@ -347,8 +347,8 @@ class ResumeDocument(MongoBaseModel):
     title: str
     file_url: str
     file_type: ResumeFileType = ResumeFileType.PDF
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 class ResumeVersionDocument(MongoBaseModel):
@@ -358,7 +358,7 @@ class ResumeVersionDocument(MongoBaseModel):
     content: Dict[str, Any]
     file_url: Optional[str] = None
     version_number: int = Field(ge=1)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class PerformanceRecordDocument(MongoBaseModel):
@@ -368,7 +368,7 @@ class PerformanceRecordDocument(MongoBaseModel):
     skill_match_score: float = Field(ge=0.0, le=100.0)
     eligibility_status: EligibilityStatus
     eligibility_reason: Optional[Union[str, List[str]]] = None
-    assessed_at: datetime = Field(default_factory=datetime.utcnow)
+    assessed_at: datetime = Field(default_factory=datetime.now)
 
 
 class NotificationDocument(MongoBaseModel):
@@ -377,7 +377,7 @@ class NotificationDocument(MongoBaseModel):
     title: str
     message: str
     is_read: bool = False
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 
 class AuditLogDocument(MongoBaseModel):
@@ -387,4 +387,4 @@ class AuditLogDocument(MongoBaseModel):
     entity_type: str
     entity_id: Union[PyObjectId, str]
     metadata: Optional[Dict[str, Any]] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)

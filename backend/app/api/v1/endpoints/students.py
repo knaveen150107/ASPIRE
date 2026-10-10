@@ -40,8 +40,8 @@ def get_my_student_profile(
             graduation_year=profile.get("graduation_year", 2026),
             cgpa=profile.get("cgpa", 0.0),
             profile_summary=profile.get("profile_summary"),
-            created_at=profile.get("created_at", datetime.utcnow()),
-            updated_at=profile.get("updated_at", datetime.utcnow()),
+            created_at=profile.get("created_at", datetime.now()),
+            updated_at=profile.get("updated_at", datetime.now()),
         )
     )
 
@@ -59,7 +59,7 @@ def update_my_student_profile(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student profile not found.")
 
     update_fields = payload.model_dump(exclude_unset=True)
-    update_fields["updated_at"] = datetime.utcnow()
+    update_fields["updated_at"] = datetime.now()
 
     db["student_profiles"].update_one(
         {"_id": profile["_id"]},
@@ -109,7 +109,7 @@ def list_my_skills(
                 category=skill_doc.get("category") if skill_doc else None,
                 proficiency=doc.get("proficiency", "beginner"),
                 evidence=doc.get("evidence"),
-                updated_at=doc.get("updated_at", datetime.utcnow()),
+                updated_at=doc.get("updated_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)
@@ -134,7 +134,7 @@ def add_or_update_my_skill(
     if not skill_doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Referenced skill does not exist.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     # Upsert student skill
     result = db["student_skills"].find_one_and_update(
         {"student_id": profile["_id"], "skill_id": skill_oid},

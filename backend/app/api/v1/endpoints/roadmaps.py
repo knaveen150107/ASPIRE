@@ -30,7 +30,7 @@ def create_roadmap(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student profile is incomplete.")
 
     report_oid = ObjectId(payload.report_id) if payload.report_id and ObjectId.is_valid(payload.report_id) else None
-    now = datetime.utcnow()
+    now = datetime.now()
 
     roadmap_doc = {
         "student_id": profile["_id"],
@@ -123,8 +123,8 @@ def list_my_roadmaps(
                     resource_url=st.get("resource_url"),
                     sequence_number=st["sequence_number"],
                     status=st.get("status", "pending"),
-                    created_at=st.get("created_at", datetime.utcnow()),
-                    updated_at=st.get("updated_at", datetime.utcnow()),
+                    created_at=st.get("created_at", datetime.now()),
+                    updated_at=st.get("updated_at", datetime.now()),
                 )
             )
 
@@ -137,8 +137,8 @@ def list_my_roadmaps(
                 target_date=r.get("target_date"),
                 status=r.get("status", "not_started"),
                 steps=steps,
-                created_at=r.get("created_at", datetime.utcnow()),
-                updated_at=r.get("updated_at", datetime.utcnow()),
+                created_at=r.get("created_at", datetime.now()),
+                updated_at=r.get("updated_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)
@@ -160,7 +160,7 @@ def update_roadmap_step(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap step not found.")
 
     update_fields = payload.model_dump(exclude_unset=True)
-    update_fields["updated_at"] = datetime.utcnow()
+    update_fields["updated_at"] = datetime.now()
 
     db["roadmap_steps"].update_one({"_id": ObjectId(step_id)}, {"$set": update_fields})
     updated = db["roadmap_steps"].find_one({"_id": ObjectId(step_id)})

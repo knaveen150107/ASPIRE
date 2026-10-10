@@ -30,7 +30,7 @@ def record_performance_evaluation(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
 
     company = db["companies"].find_one({"_id": job.get("company_id")})
-    now = datetime.utcnow()
+    now = datetime.now()
 
     doc = {
         "student_id": profile["_id"],
@@ -84,7 +84,7 @@ def list_my_performance_records(
                 skill_match_score=r.get("skill_match_score", 0.0),
                 eligibility_status=r.get("eligibility_status", "unknown"),
                 eligibility_reason=r.get("eligibility_reason"),
-                assessed_at=r.get("assessed_at", datetime.utcnow()),
+                assessed_at=r.get("assessed_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)

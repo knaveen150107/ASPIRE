@@ -31,7 +31,7 @@ def list_my_notifications(
             title=n["title"],
             message=n["message"],
             is_read=n.get("is_read", False),
-            created_at=n.get("created_at", datetime.utcnow()),
+            created_at=n.get("created_at", datetime.now()),
         )
         for n in cursor
     ]

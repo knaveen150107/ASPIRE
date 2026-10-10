@@ -43,7 +43,7 @@ def submit_application(
 
     resume_oid = ObjectId(payload.resume_id) if payload.resume_id and ObjectId.is_valid(payload.resume_id) else None
 
-    now = datetime.utcnow()
+    now = datetime.now()
     doc = {
         "student_id": profile["_id"],
         "job_id": job_oid,
@@ -121,12 +121,12 @@ def list_my_applications(
                 job_title=job.get("title") if job else None,
                 company_name=company.get("name") if company else None,
                 resume_id=str(app["resume_id"]) if app.get("resume_id") else None,
-                applied_at=app.get("applied_at", datetime.utcnow()),
+                applied_at=app.get("applied_at", datetime.now()),
                 status=app.get("status", "applied"),
                 source=app.get("source", "portal"),
                 notes=app.get("notes"),
-                created_at=app.get("created_at", datetime.utcnow()),
-                updated_at=app.get("updated_at", datetime.utcnow()),
+                created_at=app.get("created_at", datetime.now()),
+                updated_at=app.get("updated_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)
@@ -163,12 +163,12 @@ def list_job_applications_for_recruiter(
                 job_id=str(app["job_id"]),
                 job_title=job.get("title"),
                 resume_id=str(app["resume_id"]) if app.get("resume_id") else None,
-                applied_at=app.get("applied_at", datetime.utcnow()),
+                applied_at=app.get("applied_at", datetime.now()),
                 status=app.get("status", "applied"),
                 source=app.get("source", "portal"),
                 notes=app.get("notes"),
-                created_at=app.get("created_at", datetime.utcnow()),
-                updated_at=app.get("updated_at", datetime.utcnow()),
+                created_at=app.get("created_at", datetime.now()),
+                updated_at=app.get("updated_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)
@@ -185,7 +185,7 @@ def update_application_status(
     if not ObjectId.is_valid(application_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid application ID.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     db["applications"].update_one(
         {"_id": ObjectId(application_id)},
         {"$set": {"status": payload.status, "notes": payload.notes, "updated_at": now}},

@@ -33,7 +33,7 @@ def create_mock_test(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student profile is incomplete.")
 
     job_oid = ObjectId(payload.job_id) if payload.job_id and ObjectId.is_valid(payload.job_id) else None
-    now = datetime.utcnow()
+    now = datetime.now()
 
     test_doc = {
         "student_id": profile["_id"],
@@ -109,7 +109,7 @@ def list_my_mock_tests(
                 status=t.get("status", "created"),
                 started_at=t.get("started_at"),
                 completed_at=t.get("completed_at"),
-                created_at=t.get("created_at", datetime.utcnow()),
+                created_at=t.get("created_at", datetime.now()),
                 questions_count=q_count,
             )
         )
@@ -168,7 +168,7 @@ def submit_mock_test(
     total_score = 0.0
     total_possible_marks = 0.0
     correct_count = 0
-    now = datetime.utcnow()
+    now = datetime.now()
 
     topic_totals: Dict[str, Dict[str, float]] = {}
 

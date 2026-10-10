@@ -70,8 +70,8 @@ def list_jobs(
                 status=j.get("status", "published"),
                 source_name=j.get("source_name", "Campus Placement"),
                 source_url=j.get("source_url"),
-                created_at=j.get("created_at", datetime.utcnow()),
-                updated_at=j.get("updated_at", datetime.utcnow()),
+                created_at=j.get("created_at", datetime.now()),
+                updated_at=j.get("updated_at", datetime.now()),
             )
         )
     return PaginatedResponse(total=total, page=page, page_size=page_size, data=results)
@@ -112,8 +112,8 @@ def get_job_details(
             status=job.get("status", "published"),
             source_name=job.get("source_name", "Campus Placement"),
             source_url=job.get("source_url"),
-            created_at=job.get("created_at", datetime.utcnow()),
-            updated_at=job.get("updated_at", datetime.utcnow()),
+            created_at=job.get("created_at", datetime.now()),
+            updated_at=job.get("updated_at", datetime.now()),
         )
     )
 
@@ -221,7 +221,7 @@ def create_job_posting(
     if not company:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     doc = payload.model_dump()
     doc["company_id"] = ObjectId(payload.company_id)
     doc["created_at"] = now
@@ -280,7 +280,7 @@ def list_job_requirements(
                 importance=r.get("importance", "high"),
                 mandatory=r.get("mandatory", True),
                 minimum_proficiency=r.get("minimum_proficiency", "intermediate"),
-                created_at=r.get("created_at", datetime.utcnow()),
+                created_at=r.get("created_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)
@@ -305,7 +305,7 @@ def add_job_requirement(
     if not skill:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Skill not found.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     doc = {
         "job_id": ObjectId(job_id),
         "skill_id": ObjectId(payload.skill_id),

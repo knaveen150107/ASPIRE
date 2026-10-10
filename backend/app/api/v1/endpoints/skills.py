@@ -33,7 +33,7 @@ def list_skills(
             name=s["name"],
             category=s["category"],
             description=s.get("description"),
-            created_at=s.get("created_at", datetime.utcnow()),
+            created_at=s.get("created_at", datetime.now()),
         )
         for s in skills_cursor
     ]
@@ -51,7 +51,7 @@ def create_skill(
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Skill already exists.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     doc = {
         "name": payload.name,
         "category": payload.category,

@@ -29,7 +29,7 @@ def create_master_resume(
     if not profile:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Student profile is incomplete.")
 
-    now = datetime.utcnow()
+    now = datetime.now()
     doc = {
         "student_id": profile["_id"],
         "title": payload.title,
@@ -73,8 +73,8 @@ def list_my_resumes(
             title=r["title"],
             file_url=r["file_url"],
             file_type=r.get("file_type", "pdf"),
-            created_at=r.get("created_at", datetime.utcnow()),
-            updated_at=r.get("updated_at", datetime.utcnow()),
+            created_at=r.get("created_at", datetime.now()),
+            updated_at=r.get("updated_at", datetime.now()),
         )
         for r in resumes_cursor
     ]
@@ -102,7 +102,7 @@ def create_tailored_version(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Master resume not found.")
 
     job_oid = ObjectId(payload.job_id) if payload.job_id and ObjectId.is_valid(payload.job_id) else None
-    now = datetime.utcnow()
+    now = datetime.now()
 
     # Calculate version number
     version_count = db["resume_versions"].count_documents({"resume_id": ObjectId(resume_id)})
@@ -159,7 +159,7 @@ def list_resume_versions(
                 content=v.get("content", {}),
                 file_url=v.get("file_url"),
                 version_number=v.get("version_number", 1),
-                created_at=v.get("created_at", datetime.utcnow()),
+                created_at=v.get("created_at", datetime.now()),
             )
         )
     return ApiResponse(data=results)
