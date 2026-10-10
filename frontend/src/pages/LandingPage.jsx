@@ -128,16 +128,6 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
 
             {/* Right Dashboard Mockup Column */}
             <div className="lg:col-span-6 relative pt-6 sm:pt-8">
-              {/* Handwritten note at top right */}
-              <div className="absolute -top-3 right-4 hidden sm:flex items-center gap-2 transform rotate-2 z-10 pointer-events-none">
-                <span className="font-['Caveat'] text-2xl font-bold text-slate-600 dark:text-slate-400 tracking-wide">
-                  From Learning To Earning
-                </span>
-                <svg className="w-8 h-8 text-blue-500 transform -rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </div>
-
               {/* Floating 3D/Animated Mockup Card */}
               <div className="relative rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-2xl overflow-hidden animate-welcome-card animate-glow-card transition-all duration-300 hover:shadow-blue-500/20">
                 {/* Top Floating AI Pill */}
