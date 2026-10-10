@@ -19,7 +19,9 @@ import RecruiterDashboard from './pages/RecruiterDashboard';
 function MainApp() {
   const { user, isAuthenticated, role, loading } = useAuth();
   const toast = useToast();
-  const [currentView, setCurrentView] = useState('landing');
+  const [currentView, setCurrentView] = useState(() => {
+    return localStorage.getItem('aspire_token') ? 'dashboard' : 'landing';
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalInitialTab, setAuthModalInitialTab] = useState('login');
 
@@ -33,18 +35,24 @@ function MainApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Redirect to appropriate dashboard after initial login from landing page
+  // Redirect to appropriate role dashboard after initial login
   useEffect(() => {
-    if (user && currentView === 'landing') {
-      if (user.role === 'admin') {
-        setCurrentView('admin');
-      } else if (user.role === 'recruiter') {
-        setCurrentView('recruiter');
-      } else {
-        setCurrentView('dashboard');
+    if (user) {
+      if (currentView === 'landing') {
+        if (user.role === 'admin') {
+          setCurrentView('admin');
+        } else if (user.role === 'recruiter') {
+          setCurrentView('recruiter');
+        } else {
+          setCurrentView('dashboard');
+        }
+      }
+    } else if (!loading && !localStorage.getItem('aspire_token')) {
+      if (currentView === 'dashboard') {
+        setCurrentView('landing');
       }
     }
-  }, [user]);
+  }, [user, loading]);
 
   // View Access Guard Renderer
   const renderCurrentView = () => {
@@ -80,15 +88,23 @@ function MainApp() {
       return <RecruiterDashboard onNavigate={handleNavigate} />;
     }
 
-    // 4. Student Protected Tools (Protected: Authentication Required)
-    if (['dashboard', 'mock-tests', 'skill-gaps', 'roadmaps', 'resumes'].includes(currentView)) {
+    // 4. Student Dashboard / Home View (Always Accessible)
+    if (currentView === 'dashboard') {
+      return (
+        <StudentDashboard
+          onNavigate={handleNavigate}
+          onOpenAuth={openAuthModal}
+        />
+      );
+    }
+
+    // 5. Student Protected Tools (Mock Tests, Skill Gaps, Roadmaps, Resumes)
+    if (['mock-tests', 'skill-gaps', 'roadmaps', 'resumes'].includes(currentView)) {
       if (!isAuthenticated) {
         return <ProtectedView requiredRole="authenticated" onOpenAuth={openAuthModal} onNavigate={handleNavigate} />;
       }
 
       switch (currentView) {
-        case 'dashboard':
-          return <StudentDashboard onNavigate={handleNavigate} />;
         case 'mock-tests':
           return <MockTestsPage onNavigate={handleNavigate} />;
         case 'skill-gaps':
@@ -98,17 +114,17 @@ function MainApp() {
         case 'resumes':
           return <ResumesPage onNavigate={handleNavigate} />;
         default:
-          return <StudentDashboard onNavigate={handleNavigate} />;
+          return <StudentDashboard onNavigate={handleNavigate} onOpenAuth={openAuthModal} />;
       }
     }
 
-    // 5. Job Discovery Board (Public / Accessible to all, with login prompts on apply)
+    // 6. Job Discovery Board (Public / Accessible to all)
     if (currentView === 'jobs') {
       return <JobsPage onNavigate={handleNavigate} onOpenAuth={openAuthModal} />;
     }
 
     return (
-      <LandingPage
+      <StudentDashboard
         onNavigate={handleNavigate}
         onOpenAuth={openAuthModal}
       />
@@ -117,7 +133,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col selection:bg-blue-600 selection:text-white antialiased">
-      {/* Navigation Header */}
+      {/* Global Top Navigation Header (Always Visible) */}
       <Navbar
         currentView={currentView}
         onNavigate={handleNavigate}

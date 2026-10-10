@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -18,14 +18,27 @@ import {
   ShieldCheck,
   ChevronRight,
   X,
-  Sparkles
+  Sparkles,
+  UploadCloud,
+  Brain,
+  Cpu,
+  FileUp,
+  Check,
+  Layers,
+  RefreshCw,
+  Search,
+  CheckSquare,
+  Square,
+  LayoutDashboard,
+  LogOut
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import AspireLogo from '../components/AspireLogo';
 
 export default function StudentDashboard({ onNavigate }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const toast = useToast();
   const [profile, setProfile] = useState(null);
   const [skills, setSkills] = useState([]);
@@ -34,12 +47,32 @@ export default function StudentDashboard({ onNavigate }) {
   const [mockTests, setMockTests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal for adding skill
+  // Manual Add Skill State
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
-  const [newSkillId, setNewSkillId] = useState('');
+  const [skillInputMode, setSkillInputMode] = useState('catalog'); // 'catalog' or 'custom'
+  const [selectedCatalogSkill, setSelectedCatalogSkill] = useState('');
+  const [customSkillName, setCustomSkillName] = useState('');
+  const [customCategory, setCustomCategory] = useState('Programming Languages');
   const [newProficiency, setNewProficiency] = useState('intermediate');
   const [newEvidence, setNewEvidence] = useState('');
   const [isSubmittingSkill, setIsSubmittingSkill] = useState(false);
+
+  // RAG Resume Upload & Skill Extraction State
+  const fileInputRef = useRef(null);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeTextPasted, setResumeTextPasted] = useState('');
+  const [showPasteText, setShowPasteText] = useState(false);
+  const [isExtractingRAG, setIsExtractingRAG] = useState(false);
+  const [ragProgressStage, setRagProgressStage] = useState('');
+  const [ragResult, setRagResult] = useState(null);
+  const [isRAGModalOpen, setIsRAGModalOpen] = useState(false);
+  const [selectedRAGSkills, setSelectedRAGSkills] = useState({}); // { [skill_name]: boolean }
+  const [editedProficiencies, setEditedProficiencies] = useState({}); // { [skill_name]: proficiency }
+  const [isImportingRAG, setIsImportingRAG] = useState(false);
+
+  // Skills search/filter in arsenal
+  const [skillSearchQuery, setSkillSearchQuery] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All');
 
   // Edit profile state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -47,7 +80,10 @@ export default function StudentDashboard({ onNavigate }) {
   const [editBacklogs, setEditBacklogs] = useState(0);
   const [editDegree, setEditDegree] = useState('B.Tech');
   const [editDepartment, setEditDepartment] = useState('Computer Science');
-  const [editBatch, setEditBatch] = useState(2025);
+  const [editBatch, setEditBatch] = useState(2026);
+  const [editProfession, setEditProfession] = useState('Full Stack Software Engineer');
+  const [editRegisterNo, setEditRegisterNo] = useState('CB.SC.U4AIE24235');
+  const [editSummary, setEditSummary] = useState('');
 
   const loadDashboardData = async () => {
     try {
@@ -61,12 +97,16 @@ export default function StudentDashboard({ onNavigate }) {
       ]);
 
       if (profileData.status === 'fulfilled' && profileData.value) {
-        setProfile(profileData.value);
-        setEditCgpa(profileData.value.cgpa ?? profileData.value.academic_record?.cgpa ?? 8.2);
-        setEditBacklogs(profileData.value.active_backlogs ?? profileData.value.academic_record?.active_backlogs ?? 0);
-        setEditDegree(profileData.value.degree || profileData.value.academic_record?.degree || 'B.Tech');
-        setEditDepartment(profileData.value.department || profileData.value.academic_record?.department || 'Computer Science');
-        setEditBatch(profileData.value.graduation_year || profileData.value.academic_record?.graduation_year || 2026);
+        const val = profileData.value;
+        setProfile(val);
+        setEditCgpa(val.cgpa ?? val.academic_record?.cgpa ?? 8.2);
+        setEditBacklogs(val.active_backlogs ?? val.academic_record?.active_backlogs ?? 0);
+        setEditDegree(val.degree || val.academic_record?.degree || 'B.Tech');
+        setEditDepartment(val.department || val.academic_record?.department || 'Computer Science');
+        setEditBatch(val.graduation_year || val.academic_record?.graduation_year || 2026);
+        setEditProfession(val.profession || val.academic_record?.profession || 'Full Stack Software Engineer');
+        setEditRegisterNo(val.register_number || 'CB.SC.U4AIE24235');
+        setEditSummary(val.profile_summary || '');
       }
 
       if (skillsData.status === 'fulfilled') setSkills(skillsData.value || []);
@@ -84,18 +124,27 @@ export default function StudentDashboard({ onNavigate }) {
     loadDashboardData();
   }, []);
 
-  const handleAddSkill = async (e) => {
+  // Handle Manual Add Skill
+  const handleAddManualSkill = async (e) => {
     e.preventDefault();
-    if (!newSkillId) {
-      toast.error('Please select a skill');
+    const finalSkillName = skillInputMode === 'catalog' ? selectedCatalogSkill : customSkillName.trim();
+    if (!finalSkillName) {
+      toast.error('Please specify a skill name');
       return;
     }
+
     try {
       setIsSubmittingSkill(true);
-      await api.addStudentSkill(newSkillId, newProficiency, newEvidence ? [newEvidence] : []);
-      toast.success('Skill added successfully to your profile');
+      await api.addStudentSkill(
+        finalSkillName,
+        newProficiency,
+        newEvidence ? newEvidence.trim() : null,
+        skillInputMode === 'catalog' ? 'Technical Skills' : customCategory
+      );
+      toast.success(`Skill "${finalSkillName}" added to your profile`);
       setIsSkillModalOpen(false);
-      setNewSkillId('');
+      setSelectedCatalogSkill('');
+      setCustomSkillName('');
       setNewEvidence('');
       const updatedSkills = await api.getStudentSkills();
       setSkills(updatedSkills || []);
@@ -116,26 +165,165 @@ export default function StudentDashboard({ onNavigate }) {
     }
   };
 
+  // Handle File Selection
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setResumeFile(file);
+      setShowPasteText(false);
+    }
+  };
+
+  // Run RAG Skill Extraction Pipeline
+  const handleRunRAGAnalysis = async () => {
+    if (!resumeFile && !resumeTextPasted.trim()) {
+      toast.error('Please upload a resume file (PDF/DOCX) or paste resume text');
+      return;
+    }
+
+    try {
+      setIsExtractingRAG(true);
+      setRagProgressStage('Chunking document passages...');
+
+      const stageTimer1 = setTimeout(() => {
+        setRagProgressStage('Computing dense vector embeddings...');
+      }, 700);
+
+      const stageTimer2 = setTimeout(() => {
+        setRagProgressStage('Running cosine similarity vector retrieval against skills ontology...');
+      }, 1600);
+
+      const stageTimer3 = setTimeout(() => {
+        setRagProgressStage('Synthesizing evidence citations & proficiency scores...');
+      }, 2500);
+
+      const response = await api.extractSkillsFromResume(resumeFile, resumeTextPasted);
+
+      clearTimeout(stageTimer1);
+      clearTimeout(stageTimer2);
+      clearTimeout(stageTimer3);
+
+      setRagResult(response);
+
+      // Pre-select all extracted skills
+      const initialSelection = {};
+      const initialProficiencies = {};
+      (response.extracted_skills || []).forEach((sk) => {
+        initialSelection[sk.skill_name] = true;
+        initialProficiencies[sk.skill_name] = sk.proficiency || 'intermediate';
+      });
+      setSelectedRAGSkills(initialSelection);
+      setEditedProficiencies(initialProficiencies);
+      setIsRAGModalOpen(true);
+      toast.success(`RAG Analysis complete: ${response.total_skills} competencies identified!`);
+    } catch (err) {
+      toast.error(err.message || 'RAG extraction failed. Please ensure file has readable text.');
+    } finally {
+      setIsExtractingRAG(false);
+      setRagProgressStage('');
+    }
+  };
+
+  // Import Selected Extracted Skills into Profile
+  const handleImportRAGSkills = async () => {
+    if (!ragResult?.extracted_skills) return;
+
+    const toImport = ragResult.extracted_skills.filter(
+      (sk) => selectedRAGSkills[sk.skill_name]
+    );
+
+    if (toImport.length === 0) {
+      toast.error('Please select at least one skill to import');
+      return;
+    }
+
+    try {
+      setIsImportingRAG(true);
+      const payload = toImport.map((sk) => ({
+        skill_id: sk.skill_id || null,
+        skill_name: sk.skill_name,
+        category: sk.category || 'Technical Skills',
+        proficiency: editedProficiencies[sk.skill_name] || sk.proficiency || 'intermediate',
+        evidence: sk.evidence || 'Extracted via RAG resume analysis',
+      }));
+
+      await api.batchAddStudentSkills(payload);
+      toast.success(`Successfully added ${payload.length} skills to your Verified Arsenal!`);
+      setIsRAGModalOpen(false);
+      setResumeFile(null);
+      setResumeTextPasted('');
+      const updatedSkills = await api.getStudentSkills();
+      setSkills(updatedSkills || []);
+    } catch (err) {
+      toast.error(err.message || 'Failed to import skills');
+    } finally {
+      setIsImportingRAG(false);
+    }
+  };
+
+  const toggleRAGSkillSelection = (skillName) => {
+    setSelectedRAGSkills((prev) => ({
+      ...prev,
+      [skillName]: !prev[skillName],
+    }));
+  };
+
+  const handleSelectAllRAGSkills = (selectAll) => {
+    const updated = {};
+    (ragResult?.extracted_skills || []).forEach((sk) => {
+      updated[sk.skill_name] = selectAll;
+    });
+    setSelectedRAGSkills(updated);
+  };
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await api.updateStudentProfile({
+      const parsedCgpa = parseFloat(editCgpa);
+      const parsedBacklogs = parseInt(editBacklogs, 10) || 0;
+      const parsedBatch = parseInt(editBatch, 10) || 2026;
+
+      const payload = {
+        degree: editDegree,
+        department: editDepartment,
+        graduation_year: parsedBatch,
+        cgpa: parsedCgpa,
+        active_backlogs: parsedBacklogs,
+        profession: editProfession.trim() || 'Full Stack Software Engineer',
+        register_number: editRegisterNo.trim() || 'CB.SC.U4AIE24235',
+        profile_summary: editSummary.trim(),
         academic_record: {
           degree: editDegree,
           department: editDepartment,
-          graduation_year: Number(editBatch),
-          cgpa: Number(editCgpa),
-          active_backlogs: Number(editBacklogs),
-          history_of_backlogs: false,
+          graduation_year: parsedBatch,
+          cgpa: parsedCgpa,
+          active_backlogs: parsedBacklogs,
+          profession: editProfession.trim() || 'Full Stack Software Engineer',
+          register_number: editRegisterNo.trim() || 'CB.SC.U4AIE24235',
+          profile_summary: editSummary.trim(),
         }
-      });
-      toast.success('Academic profile updated successfully!');
+      };
+
+      const res = await api.updateStudentProfile(payload);
+      if (res) {
+        setProfile((prev) => ({ ...prev, ...res }));
+      }
+      toast.success('Academic & Career profile updated successfully!');
       setIsEditProfileOpen(false);
-      loadDashboardData();
+      await loadDashboardData();
     } catch (err) {
       toast.error(err.message || 'Failed to update academic profile');
     }
   };
+
+  // Filter skills for display in the Arsenal card
+  const filteredSkills = skills.filter((s) => {
+    const nameMatch = (s.skill_name || s.name || s.skill_id || '').toLowerCase().includes(skillSearchQuery.toLowerCase());
+    const categoryMatch = selectedCategoryFilter === 'All' || s.category === selectedCategoryFilter;
+    return nameMatch && categoryMatch;
+  });
+
+  const uniqueSkillCategories = ['All', ...new Set(skills.map((s) => s.category).filter(Boolean))];
 
   if (loading) {
     return (
@@ -153,42 +341,28 @@ export default function StudentDashboard({ onNavigate }) {
   const degree = profile?.degree || profile?.academic_record?.degree || 'B.Tech';
   const department = profile?.department || profile?.academic_record?.department || 'Computer Science';
   const batch = profile?.graduation_year || profile?.academic_record?.graduation_year || 2026;
+  const profession = profile?.profession || profile?.academic_record?.profession || 'Full Stack Software Engineer';
+  const registerNo = profile?.register_number || 'CB.SC.U4AIE24235';
+  
+  const getTimeOfDayGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
+    <div className="bg-[#fcfdfd] min-h-screen py-8 text-slate-800 animate-fade-in font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
-        {/* Welcome Banner */}
-        <div className="rounded-3xl p-8 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/20 text-white backdrop-blur-md">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Verified Student Account • Active Placement Season
-            </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              Welcome back, {user?.name || 'Scholar'} 👋
-            </h1>
-            <p className="text-blue-100 text-xs sm:text-sm max-w-2xl font-normal">
-              Track your real-time campus placement readiness, academic record verification, and AI test scores.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setIsEditProfileOpen(true)}
-              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-md transition flex items-center gap-2"
-            >
-              <User className="w-4 h-4" />
-              Edit Academic Profile
-            </button>
-            <button
-              onClick={() => onNavigate('jobs')}
-              className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-blue-700 font-bold text-xs shadow-lg transition flex items-center gap-2"
-            >
-              <Briefcase className="w-4 h-4" />
-              Explore Open Drives
-            </button>
-          </div>
+        {/* Exact Haveloc-Style Clean Home Header */}
+        <div className="pt-6 pb-2 space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            {getTimeOfDayGreeting()}, {user?.name || 'Naveen K'}
+          </h1>
+          <p className="text-slate-500 text-sm font-normal">
+            Welcome to your placement hub. Use the menu above to browse jobs, companies, and your profile.
+          </p>
         </div>
 
         {/* Top 4 Metrics Cards */}
@@ -239,7 +413,7 @@ export default function StudentDashboard({ onNavigate }) {
               <span className="text-xs text-slate-400">competencies</span>
             </div>
             <p className="text-xs text-slate-500 font-medium">
-              Mapped against company requirements
+              Extracted via RAG & mapped to drive prerequisites
             </p>
           </div>
 
@@ -260,7 +434,179 @@ export default function StudentDashboard({ onNavigate }) {
           </div>
         </div>
 
-        {/* Main Grid: Skills & Academic Records */}
+        {/* ========================================================================= */}
+        {/* RAG RESUME EMBEDDING ANALYZER & SKILL EXTRACTION HERO CARD               */}
+        {/* ========================================================================= */}
+        <div className="rounded-3xl p-7 bg-white border border-slate-200/80 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-blue-100/40 via-indigo-50/20 to-transparent rounded-full blur-2xl pointer-events-none -mr-20 -mt-20"></div>
+
+          <div className="relative z-10 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  <Brain className="w-3.5 h-3.5 text-blue-600" />
+                  RAG Vector Embedding Engine
+                </div>
+                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                  Resume Vector Analysis & Automatic Skill Extraction
+                  <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400" />
+                </h2>
+                <p className="text-xs text-slate-500 max-w-2xl font-normal">
+                  Upload your resume in PDF/DOCX format. Our dense vector embedding pipeline chunks your resume, executes cosine similarity retrieval against canonical industry skills, and extracts citations with proficiency scoring.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsSkillModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition"
+                >
+                  <Plus className="w-3.5 h-3.5 text-blue-600" />
+                  Add Manually
+                </button>
+              </div>
+            </div>
+
+            {/* Upload or Paste Area */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* File Dropzone */}
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className={`md:col-span-2 border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition ${
+                  resumeFile 
+                    ? 'border-blue-400 bg-blue-50/40' 
+                    : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50/60 bg-slate-50/20'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.doc,.txt"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+
+                {resumeFile ? (
+                  <div className="space-y-2 flex flex-col items-center">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold shadow-sm">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900">{resumeFile.name}</p>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        {(resumeFile.size / 1024).toFixed(1)} KB • Ready for RAG embedding extraction
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setResumeFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="text-[11px] font-semibold text-rose-600 hover:underline flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" /> Change File
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 flex flex-col items-center">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
+                      <UploadCloud className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">
+                        Click to select or drag and drop your Resume
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        Supports PDF, DOCX, and TXT (Max 15MB)
+                      </p>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                      Dense Semantic Embedding Parser
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action / Paste Side Card */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1.5">
+                      <Cpu className="w-3.5 h-3.5 text-indigo-600" />
+                      Vector Retrieval
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowPasteText(!showPasteText)}
+                      className="text-[11px] text-blue-600 hover:text-blue-700 font-semibold"
+                    >
+                      {showPasteText ? 'Hide Text Area' : 'Or Paste Text'}
+                    </button>
+                  </div>
+
+                  {showPasteText ? (
+                    <textarea
+                      rows="4"
+                      value={resumeTextPasted}
+                      onChange={(e) => {
+                        setResumeTextPasted(e.target.value);
+                        if (e.target.value) setResumeFile(null);
+                      }}
+                      placeholder="Paste raw resume markdown or plain text here..."
+                      className="w-full text-xs p-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-blue-600 resize-none font-mono text-[11px]"
+                    />
+                  ) : (
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Embeddings are indexed into high-dimensional vector space. Skills are cross-referenced with context-aware semantic thresholding.
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRunRAGAnalysis}
+                  disabled={isExtractingRAG || (!resumeFile && !resumeTextPasted.trim())}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                >
+                  {isExtractingRAG ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      <span>Extracting with RAG...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Extract Skills with RAG</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </div>
+
+            {/* RAG Progress Bar while analyzing */}
+            {isExtractingRAG && (
+              <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2 animate-fade-in">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-blue-800 flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    {ragProgressStage || 'Processing document through RAG pipeline...'}
+                  </span>
+                  <span className="text-[11px] text-blue-600 font-semibold">Semantic Vector Embedding</span>
+                </div>
+                <div className="w-full h-1.5 bg-blue-200/80 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 rounded-full animate-pulse w-3/4"></div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main Grid: Skills Arsenal & Academic Records */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left 2 Cols: Verified Skills & Mock History */}
@@ -268,64 +614,130 @@ export default function StudentDashboard({ onNavigate }) {
             
             {/* Skills Card */}
             <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-5">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <Award className="w-5 h-5 text-blue-600" />
-                    Verified Skill Arsenal
+                    Verified Skill Arsenal ({skills.length})
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Skills evaluated against company placement prerequisites
+                    Skills verified through RAG analysis or added manually to your candidate profile
                   </p>
                 </div>
-                <button
-                  onClick={() => setIsSkillModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 text-xs font-bold flex items-center gap-1 transition"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Skill
-                </button>
-              </div>
 
-              {skills.length === 0 ? (
-                <div className="text-center py-10 border border-dashed border-slate-200 rounded-2xl space-y-2">
-                  <Award className="w-8 h-8 text-slate-400 mx-auto" />
-                  <p className="text-slate-600 text-xs font-semibold">No skills added to your profile yet</p>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsSkillModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition"
                   >
-                    Add First Skill
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Skill
                   </button>
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              {skills.length > 0 && (
+                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between pt-1">
+                  <div className="relative flex-1">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search skills in your profile..."
+                      value={skillSearchQuery}
+                      onChange={(e) => setSkillSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                    />
+                  </div>
+
+                  {uniqueSkillCategories.length > 2 && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                      {uniqueSkillCategories.slice(0, 5).map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategoryFilter(cat)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition whitespace-nowrap ${
+                            selectedCategoryFilter === cat
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {skills.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl space-y-3">
+                  <Award className="w-10 h-10 text-slate-300 mx-auto" />
+                  <div className="space-y-1">
+                    <p className="text-slate-700 text-xs font-bold">No skills registered on your profile yet</p>
+                    <p className="text-slate-400 text-[11px] max-w-sm mx-auto">
+                      Upload your resume above for automatic RAG extraction, or manually add your key technical proficiencies.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 pt-2">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition"
+                    >
+                      <FileUp className="w-3.5 h-3.5" />
+                      Upload Resume
+                    </button>
+                    <button
+                      onClick={() => setIsSkillModalOpen(true)}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-blue-700 transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Skill Manually
+                    </button>
+                  </div>
+                </div>
+              ) : filteredSkills.length === 0 ? (
+                <div className="text-center py-8 text-xs text-slate-500">
+                  No skills matching "{skillSearchQuery}" in this category.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {skills.map((s, idx) => (
+                  {filteredSkills.map((s, idx) => (
                     <div
-                      key={s.skill_id || idx}
-                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between group hover:border-slate-300 transition"
+                      key={s.skill_id || s.id || idx}
+                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start justify-between group hover:border-blue-300 hover:bg-white hover:shadow-xs transition"
                     >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-900">{s.name || s.skill_id}</span>
+                      <div className="space-y-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs text-slate-900 truncate">
+                            {s.skill_name || s.name || s.skill_id}
+                          </span>
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                             s.proficiency === 'expert' ? 'bg-blue-100 text-blue-700' :
                             s.proficiency === 'advanced' ? 'bg-indigo-100 text-indigo-700' :
+                            s.proficiency === 'intermediate' ? 'bg-emerald-100 text-emerald-700' :
                             'bg-slate-200 text-slate-700'
                           }`}>
                             {s.proficiency}
                           </span>
                         </div>
-                        {s.evidence && s.evidence.length > 0 && (
-                          <p className="text-[11px] text-slate-400 truncate max-w-[180px]">
-                            {s.evidence.join(', ')}
+
+                        {s.category && (
+                          <span className="inline-block text-[10px] text-slate-400 font-medium">
+                            {s.category}
+                          </span>
+                        )}
+
+                        {s.evidence && (
+                          <p className="text-[11px] text-slate-500 line-clamp-2 italic leading-relaxed pt-0.5">
+                            "{typeof s.evidence === 'string' ? s.evidence : JSON.stringify(s.evidence)}"
                           </p>
                         )}
                       </div>
 
                       <button
                         onClick={() => handleDeleteSkill(s.skill_id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 transition opacity-0 group-hover:opacity-100"
+                        className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition opacity-0 group-hover:opacity-100 shrink-0"
                         title="Remove skill"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -391,21 +803,39 @@ export default function StudentDashboard({ onNavigate }) {
           {/* Right 1 Col: Academic Details & Career Navigation */}
           <div className="space-y-6">
             
-            {/* Academic Credentials Card */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-blue-600" />
-                Academic Credentials
-              </h3>
+            {/* Academic & Professional Credentials Card */}
+            <div id="profile-section" className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-blue-600" />
+                  Academic Profile
+                </h3>
+                <button
+                  onClick={() => setIsEditProfileOpen(true)}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-bold hover:underline"
+                >
+                  Edit
+                </button>
+              </div>
               
               <div className="space-y-2.5 text-xs">
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-500">Target Profession</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    {profession}
+                  </span>
+                </div>
                 <div className="flex justify-between py-2 border-b border-slate-100">
-                  <span className="text-slate-500">Degree</span>
-                  <span className="text-slate-900 font-bold">{degree}</span>
+                  <span className="text-slate-500">Registration ID</span>
+                  <span className="text-slate-900 font-mono font-bold">{registerNo}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500">Department</span>
                   <span className="text-slate-900 font-bold">{department}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-500">Degree</span>
+                  <span className="text-slate-900 font-bold">{degree}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-500">Graduation Batch</span>
@@ -416,16 +846,19 @@ export default function StudentDashboard({ onNavigate }) {
                   <span className="text-blue-600 font-extrabold">{Number(cgpa).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-100">
-                  <span className="text-slate-500">Standing Backlogs</span>
-                  <span className="text-slate-900 font-bold">{backlogs}</span>
+                  <span className="text-slate-500">Arrear / Backlogs</span>
+                  <span className={`font-bold ${backlogs > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    {backlogs === 0 ? '0 (None)' : `${backlogs} Active`}
+                  </span>
                 </div>
               </div>
 
               <button
                 onClick={() => setIsEditProfileOpen(true)}
-                className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition"
+                className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center justify-center gap-1.5"
               >
-                Update Academic Info
+                <User className="w-3.5 h-3.5 text-slate-500" />
+                Edit Profile & Academic Records
               </button>
             </div>
 
@@ -489,50 +922,286 @@ export default function StudentDashboard({ onNavigate }) {
 
       </div>
 
-      {/* Add Skill Modal */}
+      {/* ========================================================================= */}
+      {/* RAG VECTOR SKILL EXTRACTION REVIEW & IMPORT MODAL                         */}
+      {/* ========================================================================= */}
+      {isRAGModalOpen && ragResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-3xl max-h-[90vh] bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl flex flex-col space-y-4">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  <Brain className="w-3.5 h-3.5" />
+                  RAG Vector Retrieval Results
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Extracted Competencies & Evidence ({ragResult.total_skills})
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Review the skills retrieved from indexed vector chunks. Select the ones you want to import into your Verified Arsenal.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setIsRAGModalOpen(false)}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Summary & Stats Banner */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-1">
+                <span className="font-bold text-slate-800">Executive Technical Summary:</span>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  {ragResult.summary}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleSelectAllRAGSkills(true)}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[11px] font-bold hover:bg-slate-100"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectAllRAGSkills(false)}
+                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 text-[11px] font-bold hover:bg-slate-100"
+                >
+                  Deselect All
+                </button>
+              </div>
+            </div>
+
+            {/* Extracted Skills List */}
+            <div className="overflow-y-auto max-h-[48vh] pr-1 space-y-2.5">
+              {ragResult.extracted_skills.map((sk, idx) => {
+                const isSelected = !!selectedRAGSkills[sk.skill_name];
+                const currentProf = editedProficiencies[sk.skill_name] || sk.proficiency || 'intermediate';
+
+                return (
+                  <div
+                    key={sk.skill_name || idx}
+                    className={`p-3.5 rounded-2xl border transition flex items-start gap-3 ${
+                      isSelected 
+                        ? 'bg-blue-50/40 border-blue-300' 
+                        : 'bg-white border-slate-200/80 opacity-70'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleRAGSkillSelection(sk.skill_name)}
+                      className="mt-0.5 text-blue-600 hover:text-blue-700 focus:outline-none shrink-0"
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-5 h-5 text-blue-600 fill-blue-100" />
+                      ) : (
+                        <Square className="w-5 h-5 text-slate-400" />
+                      )}
+                    </button>
+
+                    <div className="flex-1 space-y-1.5 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-slate-900">{sk.skill_name}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            {sk.category}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            {Math.round(sk.confidence * 100)}% Vector Match
+                          </span>
+                        </div>
+
+                        {/* Proficiency Dropdown */}
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Proficiency:</label>
+                          <select
+                            value={currentProf}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setEditedProficiencies((prev) => ({
+                                ...prev,
+                                [sk.skill_name]: val,
+                              }));
+                            }}
+                            className="text-xs px-2 py-1 rounded-lg bg-white border border-slate-300 text-slate-800 focus:outline-none focus:border-blue-600 font-semibold"
+                          >
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                            <option value="expert">Expert</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Evidence Quote */}
+                      {sk.evidence && (
+                        <div className="text-[11px] text-slate-600 bg-white/80 p-2 rounded-xl border border-slate-200/60 leading-relaxed font-normal">
+                          <span className="font-bold text-slate-400 uppercase text-[9px] block">Retrieved Vector Citation:</span>
+                          "{sk.evidence}"
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-xs text-slate-500 font-medium">
+                {Object.values(selectedRAGSkills).filter(Boolean).length} of {ragResult.total_skills} skills selected
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRAGModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleImportRAGSkills}
+                  disabled={isImportingRAG || Object.values(selectedRAGSkills).filter(Boolean).length === 0}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 disabled:opacity-50 transition flex items-center gap-1.5"
+                >
+                  {isImportingRAG ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      <span>Importing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Import {Object.values(selectedRAGSkills).filter(Boolean).length} Selected Skills</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MANUAL ADD SKILL MODAL                                                    */}
+      {/* ========================================================================= */}
       {isSkillModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">Add Verified Skill</h3>
-            <p className="text-xs text-slate-500">
-              Add technical competencies to unlock tailored job matching and eligibility audits.
-            </p>
-
-            <form onSubmit={handleAddSkill} className="space-y-3.5">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Select Skill</label>
-                {allCatalogSkills.length > 0 ? (
+                <h3 className="text-lg font-bold text-slate-900">Add Skill Manually</h3>
+                <p className="text-xs text-slate-500">
+                  Select from canonical placement catalog or add any custom technology.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsSkillModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mode Toggle: Catalog vs Custom */}
+            <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setSkillInputMode('catalog')}
+                className={`flex-1 py-1.5 rounded-lg transition ${
+                  skillInputMode === 'catalog' 
+                    ? 'bg-white text-blue-700 shadow-xs' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Choose from Catalog ({allCatalogSkills.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSkillInputMode('custom')}
+                className={`flex-1 py-1.5 rounded-lg transition ${
+                  skillInputMode === 'custom' 
+                    ? 'bg-white text-blue-700 shadow-xs' 
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Enter Custom Skill
+              </button>
+            </div>
+
+            <form onSubmit={handleAddManualSkill} className="space-y-3.5">
+              {skillInputMode === 'catalog' ? (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Select Canonical Skill
+                  </label>
                   <select
-                    value={newSkillId}
-                    onChange={(e) => setNewSkillId(e.target.value)}
+                    value={selectedCatalogSkill}
+                    onChange={(e) => setSelectedCatalogSkill(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
                     required
                   >
                     <option value="">-- Choose from Catalog --</option>
                     {allCatalogSkills.map((sk) => (
-                      <option key={sk._id || sk.name} value={sk.name}>
+                      <option key={sk.id || sk._id || sk.name} value={sk.name}>
                         {sk.name} ({sk.category})
                       </option>
                     ))}
                   </select>
-                ) : (
-                  <input
-                    type="text"
-                    placeholder="e.g. Python, FastAPI, React, PyTorch"
-                    value={newSkillId}
-                    onChange={(e) => setNewSkillId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
-                    required
-                  />
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Skill / Technology Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. LangChain, Solidity, Three.js, Redis, PyTorch"
+                      value={customSkillName}
+                      onChange={(e) => setCustomSkillName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Category Domain
+                    </label>
+                    <select
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                    >
+                      <option value="Programming Languages">Programming Languages</option>
+                      <option value="Frontend Development">Frontend Development</option>
+                      <option value="Backend Development">Backend Development</option>
+                      <option value="Databases & Storage">Databases & Storage</option>
+                      <option value="Cloud & DevOps">Cloud & DevOps</option>
+                      <option value="AI, ML & Data Science">AI, ML & Data Science</option>
+                      <option value="Core Computer Science">Core Computer Science</option>
+                      <option value="Soft Skills">Soft Skills</option>
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Proficiency Level</label>
                 <select
                   value={newProficiency}
                   onChange={(e) => setNewProficiency(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 font-medium"
                 >
                   <option value="beginner">Beginner (Foundational)</option>
                   <option value="intermediate">Intermediate (Project Ready)</option>
@@ -542,10 +1211,10 @@ export default function StudentDashboard({ onNavigate }) {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Evidence (Optional)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Evidence / Proof (Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g. GitHub repo link or Certification ID"
+                  placeholder="e.g. GitHub repo link, Certification ID, or project citation"
                   value={newEvidence}
                   onChange={(e) => setNewEvidence(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
@@ -576,57 +1245,113 @@ export default function StudentDashboard({ onNavigate }) {
       {/* Edit Profile Modal */}
       {isEditProfileOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-lg bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">Update Academic Record</h3>
-            <p className="text-xs text-slate-500">
-              Ensure your GPA and backlog records match verified college transcripts.
-            </p>
-
-            <form onSubmit={handleUpdateProfile} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Degree</label>
-                  <select
-                    value={editDegree}
-                    onChange={(e) => setEditDegree(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
-                  >
-                    <option value="B.Tech">B.Tech</option>
-                    <option value="B.E.">B.E.</option>
-                    <option value="M.Tech">M.Tech</option>
-                    <option value="MCA">MCA</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-                  <select
-                    value={editDepartment}
-                    onChange={(e) => setEditDepartment(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
-                  >
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Information Technology">Information Technology</option>
-                    <option value="Electronics & Communication">Electronics & Communication</option>
-                    <option value="Artificial Intelligence & DS">Artificial Intelligence & DS</option>
-                  </select>
-                </div>
+          <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3.5">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <User className="w-5 h-5 text-blue-600" />
+                  Edit Student Profile & Credentials
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Update your academic standing, target profession, and verification details.
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsEditProfileOpen(false)}
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              <div className="grid grid-cols-3 gap-3">
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              
+              {/* Target Profession & Roll Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Batch Year</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Target Profession / Role
+                  </label>
                   <input
-                    type="number"
-                    value={editBatch}
-                    onChange={(e) => setEditBatch(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                    type="text"
+                    value={editProfession}
+                    onChange={(e) => setEditProfession(e.target.value)}
+                    placeholder="e.g. Full Stack Developer, AI/ML Engineer"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Current CGPA</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Registration / Roll Number
+                  </label>
+                  <input
+                    type="text"
+                    value={editRegisterNo}
+                    onChange={(e) => setEditRegisterNo(e.target.value)}
+                    placeholder="e.g. CB.SC.U4AIE24235"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Department & Degree */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
+                  <select
+                    value={editDepartment}
+                    onChange={(e) => setEditDepartment(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                  >
+                    <option value="Computer Science">Computer Science & Engineering</option>
+                    <option value="Artificial Intelligence & DS">Artificial Intelligence & Data Science</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Electronics & Communication">Electronics & Communication</option>
+                    <option value="Electrical Engineering">Electrical & Electronics</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
+                    <option value="Data Science">Data Science</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Degree</label>
+                  <select
+                    value={editDegree}
+                    onChange={(e) => setEditDegree(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                  >
+                    <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
+                    <option value="B.E.">B.E. (Bachelor of Engineering)</option>
+                    <option value="M.Tech">M.Tech (Master of Technology)</option>
+                    <option value="MCA">MCA (Master of Computer Apps)</option>
+                    <option value="B.Sc">B.Sc Computer Science</option>
+                    <option value="M.Sc">M.Sc Data Analytics</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Batch Year, CGPA, Arrears / Backlogs */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Graduation Year</label>
+                  <input
+                    type="number"
+                    min="2020"
+                    max="2035"
+                    value={editBatch}
+                    onChange={(e) => setEditBatch(e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Cumulative GPA (0-10)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -634,37 +1359,52 @@ export default function StudentDashboard({ onNavigate }) {
                     max="10"
                     value={editCgpa}
                     onChange={(e) => setEditCgpa(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Backlogs</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Arrears / Backlogs</label>
                   <input
                     type="number"
                     min="0"
+                    max="20"
                     value={editBacklogs}
                     onChange={(e) => setEditBacklogs(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
                     required
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              {/* Career Summary / Bio */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Career Bio & Placement Summary
+                </label>
+                <textarea
+                  rows="2"
+                  value={editSummary}
+                  onChange={(e) => setEditSummary(e.target.value)}
+                  placeholder="e.g. Passionate full-stack developer with strong foundation in DSA, Python, and cloud architectures..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-semibold"
+                  className="px-4 py-2.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-bold transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition hover:shadow-lg"
                 >
-                  Save Changes
+                  Save Profile Details
                 </button>
               </div>
             </form>

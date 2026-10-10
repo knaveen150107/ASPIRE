@@ -19,8 +19,9 @@ class ApiClient {
 
   async request(endpoint, options = {}) {
     const token = this.getToken();
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     };
 
@@ -94,10 +95,37 @@ class ApiClient {
     return res.data || [];
   }
 
-  async addStudentSkill(skillId, proficiency, evidence) {
+  async addStudentSkill(skillIdOrName, proficiency = 'intermediate', evidence = null, category = 'Technical Skills') {
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(skillIdOrName);
+    const body = isObjectId
+      ? { skill_id: skillIdOrName, proficiency, evidence }
+      : { skill_name: skillIdOrName, category, proficiency, evidence };
     const res = await this.request('/students/me/skills', {
       method: 'POST',
-      body: JSON.stringify({ skill_id: skillId, proficiency, evidence }),
+      body: JSON.stringify(body),
+    });
+    return res.data;
+  }
+
+  async batchAddStudentSkills(skills) {
+    const res = await this.request('/students/me/skills/batch', {
+      method: 'POST',
+      body: JSON.stringify({ skills }),
+    });
+    return res.data || [];
+  }
+
+  async extractSkillsFromResume(file, resumeText = '') {
+    const formData = new FormData();
+    if (file instanceof File) {
+      formData.append('file', file);
+    }
+    if (resumeText) {
+      formData.append('resume_text', resumeText);
+    }
+    const res = await this.request('/students/me/resume/extract-skills', {
+      method: 'POST',
+      body: formData,
     });
     return res.data;
   }
