@@ -217,7 +217,7 @@ export default function JobsPage({ onNavigate }) {
               return (
                 <div
                   key={job._id}
-                  className="p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between group shadow-xs"
+                  className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 transition-all flex flex-col justify-between group shadow-xs"
                 >
                   <div>
                     {/* Top Bar: Company & Status */}
