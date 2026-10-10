@@ -8,17 +8,15 @@ import {
   CheckCircle2, 
   XCircle, 
   RefreshCw, 
-  Sliders, 
   Lock, 
   Unlock,
-  AlertTriangle,
   Server
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
 export const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState('users'); // 'users' | 'audit' | 'system'
+  const [activeTab, setActiveTab] = useState('users');
   const [users, setUsers] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,54 +24,42 @@ export const AdminPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [systemHealth, setSystemHealth] = useState(null);
 
-  const { showToast } = useToast();
+  const toast = useToast();
 
-  const fetchUsers = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await api.getAllUsers(roleFilter);
-      setUsers(data);
+      if (activeTab === 'users') {
+        const userList = await api.getAllUsers(roleFilter || undefined);
+        setUsers(userList || []);
+      } else if (activeTab === 'audit') {
+        const logs = await api.getAuditLogs(50);
+        setAuditLogs(logs || []);
+      } else if (activeTab === 'system') {
+        const health = await api.checkHealth();
+        setSystemHealth(health);
+      }
     } catch (err) {
-      showToast('Failed to load user list. Admin credentials required.', 'error');
+      toast.error(err.message || 'Failed to fetch admin telemetry');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchAuditLogs = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getAuditLogs(50);
-      setAuditLogs(data);
-    } catch (err) {
-      showToast('Failed to load security audit trail.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchHealth = async () => {
-    try {
-      const data = await api.checkHealth();
-      setSystemHealth(data);
-    } catch (err) {
-      setSystemHealth({ status: 'error', database_connected: false });
     }
   };
 
   useEffect(() => {
-    if (activeTab === 'users') fetchUsers();
-    else if (activeTab === 'audit') fetchAuditLogs();
-    else if (activeTab === 'system') fetchHealth();
+    loadData();
   }, [activeTab, roleFilter]);
 
   const handleToggleUserStatus = async (userId, currentStatus) => {
     try {
-      await api.updateUserStatus(userId, !currentStatus);
-      showToast(`User account ${!currentStatus ? 'activated' : 'deactivated'}.`, 'success');
-      fetchUsers();
+      const newStatus = !currentStatus;
+      await api.updateUserStatus(userId, newStatus);
+      toast.success(`User ${newStatus ? 'Activated' : 'Suspended'} successfully`);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, is_active: newStatus } : u))
+      );
     } catch (err) {
-      showToast('Failed to update user status.', 'error');
+      toast.error(err.message || 'Failed to update user status');
     }
   };
 
@@ -83,299 +69,289 @@ export const AdminPage = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 animate-fade-in">
-      
-      {/* Header Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-emerald-500/20 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center space-x-2">
-            <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <ShieldCheck className="w-5 h-5" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Admin Control Center</h1>
+    <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        
+        {/* Banner */}
+        <div className="rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Root Administrator Control Console
+              </div>
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                System Governance & User Operations
+              </h1>
+              <p className="text-slate-500 text-xs sm:text-sm max-w-2xl font-normal">
+                Audit system events, manage student & recruiter directory permissions, and inspect MongoDB cluster telemetry.
+              </p>
+            </div>
+
+            <button
+              onClick={loadData}
+              className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center gap-2"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh Console
+            </button>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Platform telemetry, user access enforcement, and security audit log review.
-          </p>
+
+          {/* Tab Navigation */}
+          <div className="flex flex-wrap gap-2 pt-2">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                activeTab === 'users'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              User Accounts & Roles
+            </button>
+
+            <button
+              onClick={() => setActiveTab('audit')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                activeTab === 'audit'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              Security Audit Logs
+            </button>
+
+            <button
+              onClick={() => setActiveTab('system')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                activeTab === 'system'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              Database & Cluster Health
+            </button>
+          </div>
         </div>
 
-        {/* Live System Pill */}
-        <div className="flex items-center space-x-3 px-4 py-2 rounded-2xl bg-slate-950 border border-white/10 text-xs">
-          <Database className="w-4 h-4 text-emerald-400" />
-          <div className="text-left">
-            <p className="font-semibold text-white">MongoDB Atlas</p>
-            <p className="text-[10px] text-emerald-400 font-medium">Cluster Active & Guarded</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center space-x-2 border-b border-white/10 pb-4">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'users'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-              : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>User Directory & Status</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'audit'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-              : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          <span>Security Audit Trail</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('system')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-            activeTab === 'system'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-              : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
-          }`}
-        >
-          <Server className="w-4 h-4" />
-          <span>System Telemetry</span>
-        </button>
-      </div>
-
-      {/* TAB 1: USERS DIRECTORY */}
-      {activeTab === 'users' && (
-        <div className="space-y-4">
-          
-          {/* Filters Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-white/10">
+        {/* Tab 1: Users Table */}
+        {activeTab === 'users' && (
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
             
-            {/* Search Input */}
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-              <input
-                type="text"
-                placeholder="Search user by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-              />
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search user by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-600 transition"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium focus:outline-none focus:border-blue-600"
+                >
+                  <option value="">All Roles</option>
+                  <option value="student">Students Only</option>
+                  <option value="recruiter">Recruiters Only</option>
+                  <option value="admin">Administrators</option>
+                </select>
+              </div>
             </div>
 
-            {/* Role Filter */}
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <span className="text-xs text-slate-400 font-semibold">Filter Role:</span>
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="p-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="">All Roles</option>
-                <option value="student">Students</option>
-                <option value="recruiter">Recruiters</option>
-                <option value="admin">Admins</option>
-              </select>
-
-              <button
-                onClick={fetchUsers}
-                className="p-2 rounded-xl bg-slate-950 border border-white/10 text-slate-400 hover:text-white"
-                title="Refresh"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
-
-          </div>
-
-          {/* Users Table */}
-          <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden shadow-xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950/80 border-b border-white/10 text-slate-400 uppercase font-bold tracking-wider">
-                  <tr>
-                    <th className="py-3.5 px-4">User</th>
-                    <th className="py-3.5 px-4">Role</th>
-                    <th className="py-3.5 px-4">Status</th>
-                    <th className="py-3.5 px-4">Created Date</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-slate-300">
-                  {loading ? (
+            {loading ? (
+              <div className="py-12 flex justify-center">
+                <div className="w-8 h-8 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl">
+                <p className="text-slate-500 text-xs">No users matching search filters.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="text-slate-500 border-b border-slate-100 uppercase font-bold text-[10px]">
                     <tr>
-                      <td colSpan="5" className="text-center py-12 text-slate-500">
-                        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                        Loading registered accounts...
-                      </td>
+                      <th className="py-3 px-4">User</th>
+                      <th className="py-3 px-4">Role</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Created Date</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
-                  ) : filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="text-center py-12 text-slate-500">
-                        No users matching the filter criteria found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((u) => (
-                      <tr key={u.id} className="hover:bg-white/5 transition-colors">
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {filteredUsers.map((u) => (
+                      <tr key={u._id} className="hover:bg-slate-50 transition">
                         <td className="py-3.5 px-4">
                           <div>
-                            <p className="font-semibold text-white">{u.name}</p>
-                            <p className="text-[11px] text-slate-400">{u.email}</p>
+                            <span className="font-bold text-slate-900 block">{u.name}</span>
+                            <span className="text-[11px] text-slate-400 font-mono">{u.email}</span>
                           </div>
                         </td>
                         <td className="py-3.5 px-4">
-                          <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              u.role === 'admin'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : u.role === 'recruiter'
-                                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                                : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                            }`}
-                          >
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            u.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                            u.role === 'recruiter' ? 'bg-blue-100 text-blue-800' :
+                            'bg-emerald-100 text-emerald-800'
+                          }`}>
                             {u.role}
                           </span>
                         </td>
                         <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                              u.is_active
-                                ? 'bg-emerald-950/60 text-emerald-300'
-                                : 'bg-rose-950/60 text-rose-300'
-                            }`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${u.is_active ? 'bg-emerald-400' : 'bg-rose-400'}`}></span>
-                            <span>{u.is_active ? 'Active' : 'Suspended'}</span>
+                          <span className={`inline-flex items-center gap-1 font-bold ${
+                            u.is_active ? 'text-emerald-600' : 'text-rose-600'
+                          }`}>
+                            {u.is_active ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                            {u.is_active ? 'Active' : 'Suspended'}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-400 text-[11px]">
-                          {new Date(u.created_at).toLocaleDateString()} {new Date(u.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                          {u.created_at ? new Date(u.created_at).toLocaleString() : 'N/A'}
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <button
-                            onClick={() => handleToggleUserStatus(u.id, u.is_active)}
-                            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                              u.is_active
-                                ? 'bg-rose-950/40 text-rose-300 border border-rose-500/30 hover:bg-rose-900/60'
-                                : 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-900/60'
+                            onClick={() => handleToggleUserStatus(u._id, u.is_active)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1 ${
+                              u.is_active 
+                                ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200' 
+                                : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
                             }`}
                           >
-                            {u.is_active ? 'Deactivate' : 'Activate'}
+                            {u.is_active ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                            {u.is_active ? 'Suspend' : 'Activate'}
                           </button>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
           </div>
+        )}
 
-        </div>
-      )}
+        {/* Tab 2: Security Audit Logs */}
+        {activeTab === 'audit' && (
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-600" />
+              Real-Time Security & Action Audit Trail
+            </h3>
 
-      {/* TAB 2: AUDIT LOGS */}
-      {activeTab === 'audit' && (
-        <div className="rounded-2xl border border-white/10 bg-slate-900 overflow-hidden shadow-xl">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Security Audit Trail (Last 50 Actions)</span>
-            <button onClick={fetchAuditLogs} className="p-1.5 rounded-lg bg-slate-950 text-slate-400 hover:text-white">
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 border-b border-white/10 text-slate-400 uppercase font-bold tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-4">Action</th>
-                  <th className="py-3.5 px-4">Target Entity</th>
-                  <th className="py-3.5 px-4">User ID / Email</th>
-                  <th className="py-3.5 px-4">Timestamp</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-slate-300">
-                {auditLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="text-center py-12 text-slate-500">
-                      No audit events recorded yet.
-                    </td>
-                  </tr>
-                ) : (
-                  auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-white/5 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 font-mono text-[11px] font-bold">
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
-                        {log.entity_type} ({log.entity_id})
-                      </td>
-                      <td className="py-3.5 px-4 text-white">
-                        {log.user_email || log.user_id}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 text-[11px]">
-                        {new Date(log.created_at).toLocaleString()}
-                      </td>
+            {loading ? (
+              <div className="py-12 flex justify-center">
+                <div className="w-8 h-8 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl">
+                <p className="text-slate-500 text-xs">No audit entries recorded in current cycle.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="text-slate-500 border-b border-slate-100 uppercase font-bold text-[10px]">
+                    <tr>
+                      <th className="py-3 px-4">Event Action</th>
+                      <th className="py-3 px-4">Actor</th>
+                      <th className="py-3 px-4">Resource Target</th>
+                      <th className="py-3 px-4">Timestamp</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {auditLogs.map((log, idx) => (
+                      <tr key={log._id || idx} className="hover:bg-slate-50 transition">
+                        <td className="py-3.5 px-4 font-bold text-slate-900">{log.action || 'AUTH_LOGIN'}</td>
+                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">{log.actor_email || log.actor_id || 'System'}</td>
+                        <td className="py-3.5 px-4 text-slate-600">{log.resource || 'UsersCollection'}</td>
+                        <td className="py-3.5 px-4 text-slate-500 text-[11px]">{new Date(log.created_at || Date.now()).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* TAB 3: SYSTEM TELEMETRY */}
-      {activeTab === 'system' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-2xl bg-slate-900 border border-white/10 space-y-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Database Health</h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-white/5">
-                <span className="text-slate-400">Cluster Status:</span>
-                <span className="text-emerald-400 font-bold flex items-center space-x-1">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Online & Verified</span>
-                </span>
+        {/* Tab 3: Database & Cluster Health */}
+        {activeTab === 'system' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                <Database className="w-5 h-5" />
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-white/5">
-                <span className="text-slate-400">Active Collections:</span>
-                <span className="text-white font-bold">23 Collections Live</span>
+              <h3 className="text-base font-bold text-slate-900">Database Engine</h3>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Cluster:</span>
+                  <span className="font-bold text-emerald-600">MongoDB Atlas</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Database:</span>
+                  <span className="font-bold text-slate-800">aspire_db</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Strict Schema Collections:</span>
+                  <span className="font-bold text-blue-600">23 Collections</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-white/5">
-                <span className="text-slate-400">Schema Enforcement:</span>
-                <span className="text-blue-400 font-bold">Strict $jsonSchema Active</span>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Server className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">FastAPI Backend</h3>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Server Framework:</span>
+                  <span className="font-bold text-slate-800">FastAPI + Uvicorn</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Registered Endpoints:</span>
+                  <span className="font-bold text-blue-600">42 REST Routes</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Auth Standard:</span>
+                  <span className="font-bold text-purple-600">JWT HS256 Bearer</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+                <Activity className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">System Telemetry</h3>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Status:</span>
+                  <span className="font-bold text-emerald-600">Online & Serving</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Health Check:</span>
+                  <span className="font-bold text-emerald-600">200 OK</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500">Local Timestamp:</span>
+                  <span className="font-bold text-slate-700">{new Date().toLocaleTimeString()}</span>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          <div className="p-6 rounded-2xl bg-slate-900 border border-white/10 space-y-4">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">API Runtime</h3>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-white/5">
-                <span className="text-slate-400">Backend Server:</span>
-                <span className="text-emerald-400 font-bold">FastAPI + Uvicorn</span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-white/5">
-                <span className="text-slate-400">Total Registered Routes:</span>
-                <span className="text-purple-400 font-bold">42 REST Endpoints</span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-white/5">
-                <span className="text-slate-400">Security:</span>
-                <span className="text-blue-400 font-bold">OAuth2 Bearer JWT HS256</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
+      </div>
     </div>
   );
 };

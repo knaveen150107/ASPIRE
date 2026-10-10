@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, User, GraduationCap, Building2, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { X, Lock, Mail, User, GraduationCap, Building2, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import AspireLogo from './AspireLogo';
 
 export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initialTab, onSuccess }) => {
   const [mode, setMode] = useState(initialTab || initialMode || 'login'); // 'login' | 'register'
@@ -12,7 +13,7 @@ export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initi
   const [loading, setLoading] = useState(false);
 
   const { login, register } = useAuth();
-  const { showToast } = useToast();
+  const toast = useToast();
 
   if (isOpen === false) return null;
 
@@ -24,97 +25,119 @@ export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initi
       let userData;
       if (mode === 'login') {
         userData = await login(email, password);
-        showToast('Welcome back! Successfully logged in.', 'success');
+        toast.success('Welcome back! Successfully logged in.');
       } else {
         userData = await register(name, email, password, role);
-        showToast(`Account created successfully as ${role}!`, 'success');
+        toast.success(`Account created successfully as ${role}!`);
       }
       if (onSuccess) onSuccess(userData || { role });
       if (onClose) onClose();
     } catch (err) {
-      showToast(err.message || 'Authentication failed. Please check credentials.', 'error');
+      toast.error(err.message || 'Authentication failed. Please check credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md p-6 sm:p-8 rounded-2xl bg-slate-900/95 border border-white/10 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-8 shadow-2xl space-y-6">
         
-        {/* Glow ambient */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/30 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
-
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+          className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          title="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>ASPIRE Intelligence Access</span>
+        {/* Modal Brand Header */}
+        <div className="text-center space-y-2">
+          <div className="flex justify-center pb-1">
+            <AspireLogo size="md" />
           </div>
-          <h3 className="text-2xl font-bold text-white tracking-tight">
-            {mode === 'login' ? 'Sign In to ASPIRE' : 'Create Your Account'}
-          </h3>
-          <p className="text-xs text-slate-400 mt-1">
-            {mode === 'login'
-              ? 'Enter your credentials to access your career dashboard'
-              : 'Join ASPIRE to discover opportunities & bridge skill gaps'}
+          <h2 className="text-xl font-extrabold text-slate-900">
+            {mode === 'login' ? 'Sign in to ASPIRE' : 'Create your account'}
+          </h2>
+          <p className="text-xs text-slate-500">
+            {mode === 'login' 
+              ? 'Access your placement analytics, tests, and job applications' 
+              : 'Join ASPIRE to unlock AI placement readiness and roadmaps'}
           </p>
         </div>
 
-        {/* Form */}
+        {/* Login / Register Tab Switcher */}
+        <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <button
+            type="button"
+            onClick={() => setMode('login')}
+            className={`py-2 text-xs font-bold rounded-lg transition-all ${
+              mode === 'login'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('register')}
+            className={`py-2 text-xs font-bold rounded-lg transition-all ${
+              mode === 'register'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Create Account
+          </button>
+        </div>
+
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="space-y-4">
           
           {mode === 'register' && (
             <>
-              {/* Role Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">Select Your Role</label>
+              {/* Role Selection Tabs */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">Select Your Role</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setRole('student')}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                    className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition-all ${
                       role === 'student'
-                        ? 'bg-blue-600/20 border-blue-500 text-blue-400 shadow-md shadow-blue-500/10'
-                        : 'bg-slate-950/60 border-white/5 text-slate-400 hover:border-white/20'
+                        ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    <GraduationCap className="w-4 h-4 mb-1" />
+                    <GraduationCap className="w-4 h-4" />
                     <span>Student</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setRole('recruiter')}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                    className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition-all ${
                       role === 'recruiter'
-                        ? 'bg-purple-600/20 border-purple-500 text-purple-400 shadow-md shadow-purple-500/10'
-                        : 'bg-slate-950/60 border-white/5 text-slate-400 hover:border-white/20'
+                        ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    <Building2 className="w-4 h-4 mb-1" />
+                    <Building2 className="w-4 h-4" />
                     <span>Recruiter</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setRole('admin')}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                    className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition-all ${
                       role === 'admin'
-                        ? 'bg-emerald-600/20 border-emerald-500 text-emerald-400 shadow-md shadow-emerald-500/10'
-                        : 'bg-slate-950/60 border-white/5 text-slate-400 hover:border-white/20'
+                        ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                     }`}
                   >
-                    <ShieldCheck className="w-4 h-4 mb-1" />
+                    <ShieldCheck className="w-4 h-4" />
                     <span>Admin</span>
                   </button>
                 </div>
@@ -122,66 +145,64 @@ export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initi
 
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Full Name</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                   <input
                     type="text"
                     required
+                    placeholder="e.g. Alex Johnson"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Naveen K"
-                    className="w-full pl-9 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition"
                   />
                 </div>
               </div>
             </>
           )}
 
-          {/* Email */}
+          {/* Email Address */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="email"
                 required
+                placeholder="name@university.edu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@college.edu or name@company.com"
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition"
               />
             </div>
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input
                 type="password"
                 required
-                minLength={6}
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition"
               />
             </div>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center space-x-2 py-3 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold text-sm shadow-xl shadow-blue-600/25 transition-all active:scale-98 disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-600/20 transition-all active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading ? (
               <span>Processing...</span>
             ) : (
               <>
-                <span>{mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                <span>{mode === 'login' ? 'Sign In to Account' : 'Create Account'}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -189,17 +210,15 @@ export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login', initi
         </form>
 
         {/* Toggle Mode */}
-        <div className="mt-6 pt-4 border-t border-white/10 text-center">
-          <p className="text-xs text-slate-400">
-            {mode === 'login' ? "Don't have an account yet?" : 'Already registered?'}
-            <button
-              type="button"
-              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-              className="ml-1.5 font-semibold text-blue-400 hover:text-blue-300 underline"
-            >
-              {mode === 'login' ? 'Sign up' : 'Sign in'}
-            </button>
-          </p>
+        <div className="pt-2 text-center text-xs text-slate-500">
+          {mode === 'login' ? "Don't have an account yet?" : 'Already registered?'}
+          <button
+            type="button"
+            onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+            className="ml-1.5 font-bold text-blue-600 hover:text-blue-700 underline"
+          >
+            {mode === 'login' ? 'Create Account' : 'Sign In'}
+          </button>
         </div>
 
       </div>

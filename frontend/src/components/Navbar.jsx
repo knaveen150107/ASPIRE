@@ -1,23 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Compass, 
-  Briefcase, 
-  FileText, 
-  Target, 
-  Map, 
-  ShieldCheck, 
   User, 
   LogOut, 
   LogIn, 
   Menu, 
-  X,
-  Sparkles,
-  Activity,
-  Layers,
-  ChevronRight
+  X, 
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import AspireLogo from './AspireLogo';
 
 export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal, onOpenAuth }) => {
   const navigate = onNavigate || setCurrentView;
@@ -71,26 +64,16 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Logo & Brand */}
+          {/* Global Brand Logo */}
           <div 
-            className="flex items-center space-x-2.5 cursor-pointer group"
+            className="cursor-pointer"
             onClick={() => navigate('landing')}
           >
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform">
-              ▲
-            </div>
-            <div>
-              <span className="text-xl font-extrabold tracking-tight text-slate-900 block leading-tight">
-                ASPIRE
-              </span>
-              <span className="text-[9px] text-slate-400 font-medium block -mt-0.5 tracking-normal">
-                Your Career, Our Intelligence
-              </span>
-            </div>
+            <AspireLogo size="md" />
           </div>
 
           {/* Desktop Navigation */}
@@ -103,7 +86,7 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
                   onClick={() => handleNavClick(item)}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     isActive
-                      ? 'text-blue-600 bg-blue-50/80 font-bold'
+                      ? 'text-blue-600 bg-blue-50 font-bold shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
                   }`}
                 >
@@ -125,7 +108,7 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
               <div className="flex items-center space-x-2">
                 <div 
                   onClick={() => navigate(role === 'admin' ? 'admin' : role === 'recruiter' ? 'recruiter' : 'dashboard')}
-                  className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-300 transition-all"
+                  className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 cursor-pointer hover:border-blue-300 hover:bg-blue-50/40 transition-all"
                 >
                   <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-xs">
                     {user?.name ? user.name[0].toUpperCase() : 'U'}

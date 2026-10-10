@@ -3,25 +3,20 @@ import {
   Award, 
   Clock, 
   CheckCircle2, 
-  AlertCircle, 
-  HelpCircle, 
   ChevronRight, 
   ChevronLeft, 
   Play, 
-  RotateCcw, 
   BrainCircuit, 
-  TrendingUp, 
-  Sparkles,
-  Zap,
-  BarChart3,
-  Check,
-  X
+  Sparkles, 
+  Zap, 
+  BarChart3, 
+  Check, 
+  X 
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-// Default practice questions for diagnostic engine
 const SAMPLE_ASSESSMENTS = [
   {
     id: 'dsa_core',
@@ -210,7 +205,6 @@ export default function MockTestsPage() {
     if (!activeAssessment) return;
     setIsTestActive(false);
 
-    // Calculate score
     let correctCount = 0;
     const topicBreakdown = {};
     const detailedFeedback = activeAssessment.questions.map((q) => {
@@ -218,7 +212,6 @@ export default function MockTestsPage() {
       const isCorrect = selected === q.correct_answer;
       if (isCorrect) correctCount++;
 
-      // topic breakdown
       const t = q.topic || 'General';
       if (!topicBreakdown[t]) {
         topicBreakdown[t] = { correct: 0, total: 0 };
@@ -249,7 +242,6 @@ export default function MockTestsPage() {
 
     setTestResult(resultObj);
 
-    // Persist to backend
     try {
       await api.createMockTest({
         title: activeAssessment.title,
@@ -262,11 +254,10 @@ export default function MockTestsPage() {
       loadTestHistory();
       toast.success(`Assessment completed! Score: ${scorePercentage}%`);
     } catch (err) {
-      // logged locally
+      // logged
     }
   };
 
-  // Format MM:SS
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
@@ -274,343 +265,341 @@ export default function MockTestsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
-      {/* Test Active Engine View */}
-      {isTestActive && activeAssessment ? (
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Active Test Header */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 backdrop-blur-xl shadow-2xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
-                <BrainCircuit className="w-5 h-5" />
+    <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        
+        {/* Active Test Taking View */}
+        {isTestActive && activeAssessment ? (
+          <div className="max-w-4xl mx-auto space-y-6">
+            
+            {/* Active Test Header Bar */}
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <BrainCircuit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">{activeAssessment.title}</h3>
+                  <p className="text-xs text-slate-500">
+                    Question {currentQuestionIdx + 1} of {activeAssessment.questions.length}
+                  </p>
+                </div>
               </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-mono text-xs font-bold">
+                  <Clock className="w-4 h-4" />
+                  {formatTime(timeLeft)}
+                </div>
+                <button
+                  onClick={handleSubmitTest}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition"
+                >
+                  Submit Test
+                </button>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{
+                  width: `${((currentQuestionIdx + 1) / activeAssessment.questions.length) * 100}%`
+                }}
+              ></div>
+            </div>
+
+            {/* Question Card */}
+            {(() => {
+              const q = activeAssessment.questions[currentQuestionIdx];
+              return (
+                <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-lg space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                      Topic: {q.topic}
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium">Single Choice Question</span>
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">
+                    {q.question}
+                  </h2>
+
+                  <div className="space-y-3 pt-2">
+                    {q.options.map((option, optIdx) => {
+                      const isSelected = answers[q.id] === option;
+                      return (
+                        <button
+                          key={optIdx}
+                          onClick={() => handleSelectOption(q.id, option)}
+                          className={`w-full p-4 rounded-2xl border text-left font-medium text-sm transition flex items-center justify-between ${
+                            isSelected
+                              ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-xs'
+                              : 'bg-slate-50/60 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold ${
+                              isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
+                            }`}>
+                              {String.fromCharCode(65 + optIdx)}
+                            </span>
+                            <span>{option}</span>
+                          </div>
+                          {isSelected && <Check className="w-5 h-5 text-blue-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      onClick={() => setCurrentQuestionIdx((p) => Math.max(0, p - 1))}
+                      disabled={currentQuestionIdx === 0}
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold disabled:opacity-40 flex items-center gap-1 transition"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Previous
+                    </button>
+
+                    {currentQuestionIdx < activeAssessment.questions.length - 1 ? (
+                      <button
+                        onClick={() => setCurrentQuestionIdx((p) => p + 1)}
+                        className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md flex items-center gap-1 transition"
+                      >
+                        Next Question <ChevronRight className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleSubmitTest}
+                        className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md flex items-center gap-1 transition"
+                      >
+                        Complete Assessment <CheckCircle2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : testResult ? (
+          /* Scorecard Review View */
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-lg text-center space-y-5">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+                <Award className="w-8 h-8" />
+              </div>
+
               <div>
-                <h3 className="text-base font-bold text-white">{activeAssessment.title}</h3>
-                <p className="text-xs text-slate-400">
-                  Question {currentQuestionIdx + 1} of {activeAssessment.questions.length}
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Assessment Result</span>
+                <h2 className="text-2xl font-extrabold text-slate-900 mt-1">{testResult.assessmentTitle}</h2>
+                <div className="mt-4 text-5xl font-black text-blue-600">
+                  {testResult.score}%
+                </div>
+                <p className="text-slate-500 text-xs sm:text-sm mt-2">
+                  You scored <strong className="text-slate-800">{testResult.correct}</strong> out of <strong className="text-slate-800">{testResult.total}</strong> questions correctly.
                 </p>
               </div>
-            </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-cyan-400 font-mono text-sm font-bold">
-                <Clock className="w-4 h-4 text-cyan-400" />
-                {formatTime(timeLeft)}
-              </div>
-              <button
-                onClick={handleSubmitTest}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 transition"
-              >
-                Submit Test
-              </button>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-indigo-500 to-cyan-500 transition-all duration-300"
-              style={{
-                width: `${((currentQuestionIdx + 1) / activeAssessment.questions.length) * 100}%`
-              }}
-            ></div>
-          </div>
-
-          {/* Question Card */}
-          {(() => {
-            const q = activeAssessment.questions[currentQuestionIdx];
-            return (
-              <div className="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl backdrop-blur-xl space-y-6">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    Topic: {q.topic}
-                  </span>
-                  <span className="text-xs text-slate-400">Single Choice Question</span>
-                </div>
-
-                <h2 className="text-lg sm:text-xl font-bold text-white leading-relaxed">
-                  {q.question}
-                </h2>
-
-                <div className="space-y-3 pt-2">
-                  {q.options.map((option, optIdx) => {
-                    const isSelected = answers[q.id] === option;
+              {/* Topic Breakdown */}
+              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Topic-Wise Competency Breakdown</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {Object.entries(testResult.topicBreakdown).map(([topic, stats]) => {
+                    const pct = Math.round((stats.correct / stats.total) * 100);
                     return (
-                      <button
-                        key={optIdx}
-                        onClick={() => handleSelectOption(q.id, option)}
-                        className={`w-full p-4 rounded-2xl border text-left font-medium text-sm transition flex items-center justify-between group ${
-                          isSelected
-                            ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-lg shadow-indigo-500/10'
-                            : 'bg-slate-950/40 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-950'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold ${
-                            isSelected
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700'
-                          }`}>
-                            {String.fromCharCode(65 + optIdx)}
-                          </span>
-                          <span>{option}</span>
+                      <div key={topic} className="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-slate-800">{topic}</span>
+                          <span className={pct >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{pct}%</span>
                         </div>
-                        {isSelected && <Check className="w-5 h-5 text-indigo-400" />}
-                      </button>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${pct >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                            style={{ width: `${pct}%` }}
+                          ></div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
-
-                {/* Navigation Buttons */}
-                <div className="pt-6 border-t border-slate-800 flex items-center justify-between">
-                  <button
-                    onClick={() => setCurrentQuestionIdx((p) => Math.max(0, p - 1))}
-                    disabled={currentQuestionIdx === 0}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold disabled:opacity-30 disabled:hover:bg-slate-800 flex items-center gap-1.5 transition"
-                  >
-                    <ChevronLeft className="w-4 h-4" /> Previous
-                  </button>
-
-                  {currentQuestionIdx < activeAssessment.questions.length - 1 ? (
-                    <button
-                      onClick={() => setCurrentQuestionIdx((p) => p + 1)}
-                      className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 flex items-center gap-1.5 transition"
-                    >
-                      Next Question <ChevronRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleSubmitTest}
-                      className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition"
-                    >
-                      Submit Assessment <CheckCircle2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
               </div>
-            );
-          })()}
-        </div>
-      ) : testResult ? (
-        /* Scorecard & Detailed Review View */
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 backdrop-blur-xl shadow-2xl space-y-6 text-center">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center mx-auto">
-              <Award className="w-8 h-8" />
-            </div>
 
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Diagnostic Assessment Result</span>
-              <h2 className="text-3xl font-extrabold text-white mt-1">{testResult.assessmentTitle}</h2>
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-                  {testResult.score}%
-                </span>
-              </div>
-              <p className="text-slate-400 text-sm mt-2">
-                You correctly answered <strong className="text-white">{testResult.correct}</strong> out of <strong className="text-white">{testResult.total}</strong> questions.
-              </p>
-            </div>
-
-            {/* Topic Breakdown */}
-            <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 text-left space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Topic-Wise Competency Analysis</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {Object.entries(testResult.topicBreakdown).map(([topic, stats]) => {
-                  const pct = Math.round((stats.correct / stats.total) * 100);
-                  return (
-                    <div key={topic} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800">
-                      <div className="flex justify-between text-xs font-semibold mb-1.5">
-                        <span className="text-white">{topic}</span>
-                        <span className={pct >= 70 ? 'text-emerald-400' : 'text-amber-400'}>{pct}%</span>
-                      </div>
-                      <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${pct >= 70 ? 'bg-emerald-400' : 'bg-amber-400'}`}
-                          style={{ width: `${pct}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="pt-2">
+                <button
+                  onClick={() => setTestResult(null)}
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition"
+                >
+                  Back to Assessments Directory
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <button
-                onClick={() => setTestResult(null)}
-                className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
-              >
-                Back to Tests Directory
-              </button>
-            </div>
-          </div>
+            {/* Questions Detailed Breakdown */}
+            <div className="space-y-3.5">
+              <h3 className="text-lg font-bold text-slate-900">Itemized Solutions & Explanations</h3>
+              {testResult.detailedFeedback.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`p-6 rounded-2xl border space-y-3 bg-white ${
+                    item.is_correct ? 'border-emerald-200' : 'border-rose-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      {idx + 1}. {item.question}
+                    </h4>
+                    {item.is_correct ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Correct
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                        <X className="w-3 h-3" /> Incorrect
+                      </span>
+                    )}
+                  </div>
 
-          {/* Question Breakdown List */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white">Itemized Question Analysis & Explanations</h3>
-            {testResult.detailedFeedback.map((item, idx) => (
-              <div
-                key={idx}
-                className={`p-6 rounded-2xl border backdrop-blur-md space-y-3 ${
-                  item.is_correct
-                    ? 'bg-slate-900/60 border-emerald-500/30'
-                    : 'bg-slate-900/60 border-rose-500/30'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <h4 className="font-semibold text-white text-sm">
-                    {idx + 1}. {item.question}
-                  </h4>
-                  {item.is_correct ? (
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Correct
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1">
-                      <X className="w-3 h-3" /> Incorrect
-                    </span>
-                  )}
-                </div>
-
-                <div className="text-xs space-y-1">
-                  <p className="text-slate-400">
-                    Your Answer: <strong className={item.is_correct ? 'text-emerald-400' : 'text-rose-400'}>{item.selected_option}</strong>
-                  </p>
-                  {!item.is_correct && (
-                    <p className="text-slate-400">
-                      Correct Answer: <strong className="text-emerald-400">{item.correct_option}</strong>
+                  <div className="text-xs space-y-1">
+                    <p className="text-slate-600">
+                      Your Answer: <strong className={item.is_correct ? 'text-emerald-700' : 'text-rose-700'}>{item.selected_option}</strong>
                     </p>
-                  )}
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/60 text-xs text-slate-300">
-                  <span className="font-semibold text-indigo-400">AI Explanation: </span>
-                  {item.explanation}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        /* Test Catalog / Directory View */
-        <>
-          {/* Header Banner */}
-          <div className="relative rounded-3xl p-8 overflow-hidden bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 border border-slate-800 shadow-2xl backdrop-blur-xl">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Adaptive AI Diagnostic Engine
-                </div>
-                <h1 className="text-3xl font-extrabold text-white tracking-tight">
-                  Placement Mock Assessments
-                </h1>
-                <p className="text-slate-400 text-sm max-w-2xl">
-                  Simulate live hiring tests for top software engineering, product, and quantitative placement rounds.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
-                  <div className="text-2xl font-extrabold text-white">{SAMPLE_ASSESSMENTS.length}</div>
-                  <div className="text-[11px] text-slate-400">Standard Tests</div>
-                </div>
-                <div className="px-4 py-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
-                  <div className="text-2xl font-extrabold text-indigo-400">{pastTests.length}</div>
-                  <div className="text-[11px] text-slate-400">Completed</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Test Catalog Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {SAMPLE_ASSESSMENTS.map((assessment) => (
-              <div
-                key={assessment.id}
-                className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 backdrop-blur-md transition flex flex-col justify-between group shadow-lg"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                      {assessment.category}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-slate-400">
-                      <Clock className="w-3.5 h-3.5" />
-                      {assessment.duration_mins} mins
-                    </span>
+                    {!item.is_correct && (
+                      <p className="text-slate-600">
+                        Correct Answer: <strong className="text-emerald-700">{item.correct_option}</strong>
+                      </p>
+                    )}
                   </div>
 
-                  <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition">
-                    {assessment.title}
-                  </h3>
-
-                  <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-                    Test your problem solving, complexity analysis, and core placement aptitude with {assessment.questions.length} adaptive questions.
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                    <span className="font-bold text-blue-700">Explanation: </span>
+                    {item.explanation}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Catalog View */
+          <>
+            <div className="rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Adaptive Diagnostic Testing Engine
+                  </div>
+                  <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Placement Mock Assessments
+                  </h1>
+                  <p className="text-slate-500 text-xs sm:text-sm max-w-2xl font-normal">
+                    Simulate real company hiring assessments for software engineering, product, and quant roles.
                   </p>
+                </div>
 
-                  <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-                    <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    Difficulty: <span className="text-white capitalize">{assessment.difficulty}</span>
+                <div className="flex items-center gap-3">
+                  <div className="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                    <div className="text-xl font-extrabold text-slate-900">{SAMPLE_ASSESSMENTS.length}</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Standard Tests</div>
+                  </div>
+                  <div className="px-4 py-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-center">
+                    <div className="text-xl font-extrabold text-blue-700">{pastTests.length}</div>
+                    <div className="text-[10px] text-blue-600 font-bold uppercase">Completed</div>
                   </div>
                 </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-800/60">
-                  <button
-                    onClick={() => startAssessment(assessment)}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-semibold text-xs shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                    Start Assessment Now
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Past Performance Record Table */}
-          {pastTests.length > 0 && (
-            <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md space-y-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-indigo-400" />
-                Assessment History & Progress
-              </h3>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="text-slate-400 border-b border-slate-800 uppercase font-semibold">
-                    <tr>
-                      <th className="py-3 px-4">Test Title</th>
-                      <th className="py-3 px-4">Category</th>
-                      <th className="py-3 px-4">Questions</th>
-                      <th className="py-3 px-4">Score</th>
-                      <th className="py-3 px-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                    {pastTests.map((t, idx) => (
-                      <tr key={t._id || idx} className="hover:bg-slate-950/40 transition">
-                        <td className="py-3.5 px-4 font-medium text-white">{t.title}</td>
-                        <td className="py-3.5 px-4 capitalize">{t.category}</td>
-                        <td className="py-3.5 px-4">{t.total_questions || 10}</td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-extrabold text-emerald-400">{t.score}%</span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            {t.status || 'Completed'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </div>
-          )}
-        </>
-      )}
+
+            {/* Assessment Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {SAMPLE_ASSESSMENTS.map((assessment) => (
+                <div
+                  key={assessment.id}
+                  className="p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition flex flex-col justify-between group shadow-xs"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                        {assessment.category}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        {assessment.duration_mins} mins
+                      </span>
+                    </div>
+
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition">
+                      {assessment.title}
+                    </h3>
+
+                    <p className="text-xs text-slate-500 leading-relaxed font-normal">
+                      Evaluate problem solving, complexity analysis, and algorithms with {assessment.questions.length} adaptive multiple-choice questions.
+                    </p>
+
+                    <div className="pt-2 flex items-center gap-1 text-xs text-slate-500">
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
+                      Difficulty: <span className="font-bold text-slate-800 capitalize">{assessment.difficulty}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-5 border-t border-slate-100 mt-4">
+                    <button
+                      onClick={() => startAssessment(assessment)}
+                      className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      Start Assessment Now
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Past History Table */}
+            {pastTests.length > 0 && (
+              <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                  Assessment History & Progress
+                </h3>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="text-slate-500 border-b border-slate-100 uppercase font-bold text-[10px]">
+                      <tr>
+                        <th className="py-3 px-4">Test Title</th>
+                        <th className="py-3 px-4">Category</th>
+                        <th className="py-3 px-4">Questions</th>
+                        <th className="py-3 px-4">Score</th>
+                        <th className="py-3 px-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      {pastTests.map((t, idx) => (
+                        <tr key={t._id || idx} className="hover:bg-slate-50 transition">
+                          <td className="py-3.5 px-4 font-bold text-slate-900">{t.title}</td>
+                          <td className="py-3.5 px-4 capitalize">{t.category}</td>
+                          <td className="py-3.5 px-4">{t.total_questions || 10}</td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-extrabold text-emerald-600">{t.score}%</span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {t.status || 'Completed'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+      </div>
     </div>
   );
 }
