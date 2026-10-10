@@ -1,5 +1,6 @@
 import React from 'react';
-import { Sparkles, Shield, Database, Cpu, Heart } from 'lucide-react';
+import { Shield, Database, Cpu, Heart } from 'lucide-react';
+import AspireLogo from './AspireLogo';
 
 export const Footer = () => {
   return (
@@ -10,10 +11,7 @@ export const Footer = () => {
           {/* Col 1 */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <span className="text-lg font-bold text-white tracking-tight">ASPIRE</span>
+              <AspireLogo size="md" className="[&_span:first-child]:text-white [&_span:last-child]:text-slate-400" />
             </div>
             <p className="text-xs leading-relaxed text-slate-400">
               AI-Powered Student Placement & Career Intelligence Platform. Discover opportunities, bridge skill gaps, and accelerate hiring.

@@ -167,11 +167,11 @@ def get_current_user_info(
     return ApiResponse(
         data=UserResponse(
             id=str(current_user["_id"]),
-            name=current_user["name"],
-            email=current_user["email"],
-            role=current_user["role"],
-            is_active=current_user["is_active"],
-            created_at=current_user["created_at"],
-            updated_at=current_user["updated_at"],
+            name=current_user.get("name", ""),
+            email=current_user.get("email", ""),
+            role=current_user.get("role", "student"),
+            is_active=current_user.get("is_active", True),
+            created_at=current_user.get("created_at") or datetime.now(),
+            updated_at=current_user.get("updated_at") or datetime.now(),
         )
     )

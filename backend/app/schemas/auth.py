@@ -32,8 +32,19 @@ class UserResponse(BaseModel):
     email: str
     role: str
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    
+    # Enriched profile metadata
+    register_number: Optional[str] = None
+    department: Optional[str] = None
+    degree: Optional[str] = None
+    graduation_year: Optional[int] = None
+    cgpa: Optional[float] = None
+    active_backlogs: Optional[int] = None
+    skills_count: Optional[int] = 0
+    resume_uploaded: Optional[bool] = False
+    company_name: Optional[str] = None
 
 
 class CreateRecruiterRequest(BaseModel):

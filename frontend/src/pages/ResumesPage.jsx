@@ -85,21 +85,21 @@ export default function ResumesPage() {
   };
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
+    <div className="bg-[#f8fafc] dark:bg-[#090d16] min-h-screen py-8 text-slate-800 dark:text-slate-100 animate-fade-in transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Banner */}
-        <div className="rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
+        <div className="rounded-3xl p-8 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                 <Sparkles className="w-3.5 h-3.5" />
                 ATS Parser & Keyword Optimization Studio
               </div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 AI Resume Studio & Tailored Versions
               </h1>
-              <p className="text-slate-500 text-xs sm:text-sm max-w-2xl font-normal">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl font-normal">
                 Create ATS-optimized resume profiles tailored to distinct campus placement drives with keyword alignment scoring.
               </p>
             </div>
@@ -120,10 +120,10 @@ export default function ResumesPage() {
             <div className="w-10 h-10 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
           </div>
         ) : resumes.length === 0 ? (
-          <div className="text-center py-16 bg-white border border-slate-200/80 rounded-3xl space-y-3">
+          <div className="text-center py-16 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl space-y-3 transition-colors">
             <FileText className="w-10 h-10 text-slate-400 mx-auto" />
-            <h3 className="text-base font-bold text-slate-900">No Resumes Created Yet</h3>
-            <p className="text-slate-500 text-xs max-w-md mx-auto">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">No Resumes Created Yet</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-xs max-w-md mx-auto">
               Build your master profile resume or create custom tailored variants with ATS keyword matching.
             </p>
             <button
@@ -138,16 +138,16 @@ export default function ResumesPage() {
             {resumes.map((resume, idx) => (
               <div
                 key={resume._id || idx}
-                className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 transition flex flex-col justify-between group shadow-xs"
+                className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition flex flex-col justify-between group shadow-xs"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
                       <FileText className="w-5 h-5" />
                     </div>
 
                     <div className="text-right">
-                      <div className="flex items-center gap-1 text-emerald-600 font-extrabold text-xs">
+                      <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs">
                         <Cpu className="w-3.5 h-3.5" />
                         ATS: {resume.ats_score || 88}%
                       </div>
@@ -155,11 +155,11 @@ export default function ResumesPage() {
                     </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                     {resume.title}
                   </h3>
 
-                  <p className="mt-2 text-xs text-slate-500 line-clamp-3 leading-relaxed font-normal">
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed font-normal">
                     {resume.summary || 'Professional academic and software engineering summary for top-tier placement evaluation.'}
                   </p>
 
@@ -169,7 +169,7 @@ export default function ResumesPage() {
                       {resume.skills.slice(0, 5).map((sk, sIdx) => (
                         <span
                           key={sIdx}
-                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700"
+                          className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700"
                         >
                           {sk}
                         </span>
@@ -178,11 +178,11 @@ export default function ResumesPage() {
                   )}
                 </div>
 
-                <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400">Ready for Direct Drive Apply</span>
+                <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">Ready for Direct Drive Apply</span>
                   <button
                     onClick={() => toast.success(`Exporting ${resume.title} to PDF!`)}
-                    className="px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5"
                   >
                     <Download className="w-3.5 h-3.5" /> Export PDF
                   </button>
@@ -196,64 +196,64 @@ export default function ResumesPage() {
 
       {/* Create Resume Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-lg bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 transition-colors">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">AI Resume Tailor</span>
-              <h3 className="text-lg font-bold text-slate-900 mt-0.5">Create Tailored Placement Resume</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">AI Resume Tailor</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">Create Tailored Placement Resume</h3>
             </div>
 
             <form onSubmit={handleCreateResume} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Resume Title / Target Role</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Resume Title / Target Role</label>
                 <input
                   type="text"
                   placeholder="e.g. Master SWE Resume, Full Stack AI Specialist"
                   value={resumeTitle}
                   onChange={(e) => setResumeTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-blue-600 dark:focus:border-blue-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Executive Summary</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Executive Summary</label>
                 <textarea
                   rows="3"
                   placeholder="Summarize your engineering expertise, hackathons, and career focus..."
                   value={summary}
                   onChange={(e) => setSummary(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 resize-none"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-blue-600 dark:focus:border-blue-500 resize-none"
                 ></textarea>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Target Skills (Comma Separated)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Skills (Comma Separated)</label>
                 <input
                   type="text"
                   placeholder="e.g. Python, FastAPI, React, PyTorch, Docker, PostgreSQL"
                   value={skillsInput}
                   onChange={(e) => setSkillsInput(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-blue-600 dark:focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Key Projects Highlight</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Key Projects Highlight</label>
                 <input
                   type="text"
                   placeholder="e.g. ASPIRE AI Platform - Built with FastAPI and React"
                   value={projectsInput}
                   onChange={(e) => setProjectsInput(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-blue-600 dark:focus:border-blue-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-semibold"
                 >
                   Cancel
                 </button>

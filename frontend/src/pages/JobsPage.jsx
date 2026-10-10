@@ -99,47 +99,47 @@ export default function JobsPage({ onNavigate }) {
       job.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (job.required_skills && job.required_skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())));
 
-    const matchesDept = selectedDept === 'All' || 
+    const matchesDept = 
+      selectedDept === 'All' || 
       !job.eligibility_criteria?.allowed_departments ||
-      job.eligibility_criteria.allowed_departments.includes(selectedDept) ||
-      job.eligibility_criteria.allowed_departments.length === 0;
+      job.eligibility_criteria.allowed_departments.includes(selectedDept);
 
-    const matchesDegree = selectedDegree === 'All' ||
+    const matchesDegree = 
+      selectedDegree === 'All' || 
       !job.eligibility_criteria?.allowed_degrees ||
-      job.eligibility_criteria.allowed_degrees.includes(selectedDegree) ||
-      job.eligibility_criteria.allowed_degrees.length === 0;
+      job.eligibility_criteria.allowed_degrees.includes(selectedDegree);
 
     return matchesSearch && matchesDept && matchesDegree;
   });
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950/70 py-8 text-slate-800 dark:text-slate-100 animate-fade-in transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
-        {/* Banner */}
-        <div className="rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                <Sparkles className="w-3.5 h-3.5" />
-                Verified Campus Placement Opportunities
+        {/* Header and Filter Card */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                Live Campus Recruitment Drives
               </div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                Placement Drives & Career Board
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Verified Placement Openings
               </h1>
-              <p className="text-slate-500 text-xs sm:text-sm max-w-2xl font-normal">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl font-normal">
                 Discover job drives with instant AI academic eligibility audits, required skills breakdown, and 1-click applications.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-                <div className="text-xl font-extrabold text-slate-900">{jobs.length}</div>
+              <div className="px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+                <div className="text-xl font-extrabold text-slate-900 dark:text-white">{jobs.length}</div>
                 <div className="text-[10px] text-slate-400 font-bold uppercase">Total Drives</div>
               </div>
-              <div className="px-4 py-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-center">
-                <div className="text-xl font-extrabold text-blue-700">{myAppliedJobIds.size}</div>
-                <div className="text-[10px] text-blue-600 font-bold uppercase">Applied</div>
+              <div className="px-4 py-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
+                <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{myAppliedJobIds.size}</div>
+                <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Applied</div>
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function JobsPage({ onNavigate }) {
                 placeholder="Search by job title, company name, skill (e.g. React, Python)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:outline-none focus:border-blue-600 focus:bg-white dark:focus:bg-slate-800 transition"
               />
             </div>
 
@@ -161,7 +161,7 @@ export default function JobsPage({ onNavigate }) {
               <select
                 value={selectedDept}
                 onChange={(e) => setSelectedDept(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:outline-none focus:border-blue-600 transition font-medium"
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:border-blue-600 transition font-medium"
               >
                 <option value="All">All Departments</option>
                 <option value="Computer Science">Computer Science</option>
@@ -175,7 +175,7 @@ export default function JobsPage({ onNavigate }) {
               <select
                 value={selectedDegree}
                 onChange={(e) => setSelectedDegree(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs focus:outline-none focus:border-blue-600 transition font-medium"
+                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:border-blue-600 transition font-medium"
               >
                 <option value="All">All Degrees</option>
                 <option value="B.Tech">B.Tech</option>
@@ -192,17 +192,17 @@ export default function JobsPage({ onNavigate }) {
           <div className="min-h-[40vh] flex items-center justify-center">
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
-              <p className="text-slate-500 text-xs">Matching opportunities with your profile...</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs">Matching opportunities with your profile...</p>
             </div>
           </div>
         ) : filteredJobs.length === 0 ? (
-          <div className="text-center py-16 bg-white border border-slate-200/80 rounded-3xl space-y-3">
+          <div className="text-center py-16 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl space-y-3">
             <Briefcase className="w-10 h-10 text-slate-400 mx-auto" />
-            <h3 className="text-base font-bold text-slate-900">No placement drives found</h3>
-            <p className="text-slate-500 text-xs">Try resetting your department or query filters.</p>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">No placement drives found</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-xs">Try resetting your department or query filters.</p>
             <button
               onClick={() => { setSearchQuery(''); setSelectedDept('All'); setSelectedDegree('All'); }}
-              className="mt-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold hover:bg-blue-100 transition"
+              className="mt-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
             >
               Reset All Filters
             </button>
@@ -217,39 +217,39 @@ export default function JobsPage({ onNavigate }) {
               return (
                 <div
                   key={job._id}
-                  className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 transition-all flex flex-col justify-between group shadow-xs"
+                  className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between group shadow-xs"
                 >
                   <div>
                     {/* Top Bar: Company & Status */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
+                        <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold text-sm">
                           {job.company_name ? job.company_name.charAt(0).toUpperCase() : 'C'}
                         </div>
                         <div>
-                          <h4 className="font-semibold text-xs text-slate-500 flex items-center gap-1">
+                          <h4 className="font-semibold text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                             <Building2 className="w-3.5 h-3.5" />
                             {job.company_name || 'Enterprise Partner'}
                           </h4>
-                          <h3 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition mt-0.5">
+                          <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition mt-0.5">
                             {job.title}
                           </h3>
                         </div>
                       </div>
 
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         {job.job_type || 'Full Time'}
                       </span>
                     </div>
 
                     {/* Location & Package Details */}
-                    <div className="flex flex-wrap items-center gap-3 py-2.5 border-y border-slate-100 text-xs text-slate-600">
-                      <span className="flex items-center gap-1 text-slate-500">
+                    <div className="flex flex-wrap items-center gap-3 py-2.5 border-y border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                         <MapPin className="w-3.5 h-3.5" />
                         {job.location || 'Remote / Hybrid'}
                       </span>
                       {job.salary_range && (
-                        <span className="flex items-center gap-1 text-emerald-600 font-bold">
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
                           <DollarSign className="w-3.5 h-3.5" />
                           {job.salary_range}
                         </span>
@@ -257,7 +257,7 @@ export default function JobsPage({ onNavigate }) {
                     </div>
 
                     {/* Description snippet */}
-                    <p className="mt-2.5 text-xs text-slate-500 line-clamp-2 leading-relaxed font-normal">
+                    <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-normal">
                       {job.description || 'Join our high-growth engineering team to build enterprise grade distributed systems and AI solutions.'}
                     </p>
 
@@ -267,7 +267,7 @@ export default function JobsPage({ onNavigate }) {
                         {job.required_skills.slice(0, 4).map((sk, idx) => (
                           <span
                             key={idx}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700"
+                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700"
                           >
                             {sk}
                           </span>
@@ -276,29 +276,29 @@ export default function JobsPage({ onNavigate }) {
                     )}
 
                     {/* Academic Criteria Badge */}
-                    <div className="mt-3.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+                    <div className="mt-3.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
                       <span className="flex items-center gap-1 font-medium">
-                        <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
-                        Min CGPA: <strong className="text-slate-800">{minCgpa > 0 ? minCgpa : 'No Cutoff'}</strong>
+                        <GraduationCap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        Min CGPA: <strong className="text-slate-800 dark:text-slate-200">{minCgpa > 0 ? minCgpa : 'No Cutoff'}</strong>
                       </span>
-                      <span>Max Backlogs: <strong className="text-slate-800">{maxBacklogs}</strong></span>
+                      <span>Max Backlogs: <strong className="text-slate-800 dark:text-slate-200">{maxBacklogs}</strong></span>
                     </div>
                   </div>
 
                   {/* Card Actions */}
-                  <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center gap-2">
+                  <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                     <button
                       onClick={() => setAuditJob(job)}
-                      className="flex-1 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center justify-center gap-1.5"
                     >
-                      <Award className="w-3.5 h-3.5 text-blue-600" />
+                      <Award className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       Audit Eligibility
                     </button>
 
                     {hasApplied ? (
                       <button
                         disabled
-                        className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-1 cursor-default"
+                        className="px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1 cursor-default"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Applied
@@ -334,22 +334,22 @@ export default function JobsPage({ onNavigate }) {
 
       {/* Apply Job Modal */}
       {applyingJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md bg-white border border-slate-200/80 rounded-3xl p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 transition-colors">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Direct Campus Application</span>
-              <h3 className="text-lg font-bold text-slate-900 mt-0.5">Apply to {applyingJob.title}</h3>
-              <p className="text-xs text-slate-500">{applyingJob.company_name || 'Enterprise Partner'}</p>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Direct Campus Application</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">Apply to {applyingJob.title}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{applyingJob.company_name || 'Enterprise Partner'}</p>
             </div>
 
             <form onSubmit={handleApply} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Select Profile / Resume</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Select Profile / Resume</label>
                 {myResumes.length > 0 ? (
                   <select
                     value={selectedResumeId}
                     onChange={(e) => setSelectedResumeId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-blue-600"
                   >
                     {myResumes.map((res) => (
                       <option key={res._id} value={res._id}>
@@ -358,28 +358,28 @@ export default function JobsPage({ onNavigate }) {
                     ))}
                   </select>
                 ) : (
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500">
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400">
                     Your verified ASPIRE Academic & Skills profile will be submitted.
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Candidate Pitch / Notes (Optional)</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Candidate Pitch / Notes (Optional)</label>
                 <textarea
                   rows="3"
                   placeholder="Share any special achievements, hackathon wins, or why you're a great fit..."
                   value={applicationNotes}
                   onChange={(e) => setApplicationNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 resize-none"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:outline-none focus:border-blue-600 resize-none"
                 ></textarea>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setApplyingJob(null)}
-                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white text-xs font-semibold"
                 >
                   Cancel
                 </button>

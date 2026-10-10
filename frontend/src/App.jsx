@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider, useToast } from './context/ToastContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import ProtectedView from './components/ProtectedView';
@@ -15,6 +16,7 @@ import SkillGapsPage from './pages/SkillGapsPage';
 import RoadmapsPage from './pages/RoadmapsPage';
 import ResumesPage from './pages/ResumesPage';
 import RecruiterDashboard from './pages/RecruiterDashboard';
+import StudentProfilePage from './pages/StudentProfilePage';
 
 function MainApp() {
   const { user, isAuthenticated, role, loading } = useAuth();
@@ -35,12 +37,12 @@ function MainApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Redirect to appropriate role dashboard after initial login
+  // Redirect to role home page after login or on reload
   useEffect(() => {
     if (user) {
-      if (currentView === 'landing') {
+      if (currentView === 'landing' || (user.role === 'admin' && currentView === 'dashboard') || (user.role === 'recruiter' && currentView === 'dashboard')) {
         if (user.role === 'admin') {
-          setCurrentView('admin');
+          setCurrentView('admin:overview');
         } else if (user.role === 'recruiter') {
           setCurrentView('recruiter');
         } else {
@@ -48,7 +50,7 @@ function MainApp() {
         }
       }
     } else if (!loading && !localStorage.getItem('aspire_token')) {
-      if (currentView === 'dashboard') {
+      if (currentView !== 'landing' && currentView !== 'jobs') {
         setCurrentView('landing');
       }
     }
@@ -66,15 +68,16 @@ function MainApp() {
       );
     }
 
-    // 2. Admin Portal (Protected: Admin Only)
-    if (currentView === 'admin') {
+    // 2. Admin Portal & Sub-Modules (Protected: Admin Only)
+    if (currentView.startsWith('admin')) {
       if (!isAuthenticated) {
         return <ProtectedView requiredRole="authenticated" onOpenAuth={openAuthModal} onNavigate={handleNavigate} />;
       }
       if (role !== 'admin') {
         return <ProtectedView requiredRole="admin" onOpenAuth={openAuthModal} onNavigate={handleNavigate} />;
       }
-      return <AdminPage onNavigate={handleNavigate} />;
+      const initialTab = currentView.includes(':') ? currentView.split(':')[1] : 'overview';
+      return <AdminPage initialTab={initialTab} onNavigate={handleNavigate} />;
     }
 
     // 3. Recruiter Hub (Protected: Recruiter or Admin)
@@ -88,8 +91,14 @@ function MainApp() {
       return <RecruiterDashboard onNavigate={handleNavigate} />;
     }
 
-    // 4. Student Dashboard / Home View (Always Accessible)
+    // 4. Student Dashboard / Home View (Role-guarded)
     if (currentView === 'dashboard') {
+      if (role === 'admin') {
+        return <AdminPage initialTab="overview" onNavigate={handleNavigate} />;
+      }
+      if (role === 'recruiter') {
+        return <RecruiterDashboard onNavigate={handleNavigate} />;
+      }
       return (
         <StudentDashboard
           onNavigate={handleNavigate}
@@ -98,13 +107,15 @@ function MainApp() {
       );
     }
 
-    // 5. Student Protected Tools (Mock Tests, Skill Gaps, Roadmaps, Resumes)
-    if (['mock-tests', 'skill-gaps', 'roadmaps', 'resumes'].includes(currentView)) {
+    // 5. Student Protected Tools (Profile, Mock Tests, Skill Gaps, Roadmaps, Resumes)
+    if (['profile', 'mock-tests', 'skill-gaps', 'roadmaps', 'resumes'].includes(currentView)) {
       if (!isAuthenticated) {
         return <ProtectedView requiredRole="authenticated" onOpenAuth={openAuthModal} onNavigate={handleNavigate} />;
       }
 
       switch (currentView) {
+        case 'profile':
+          return <StudentProfilePage onNavigate={handleNavigate} />;
         case 'mock-tests':
           return <MockTestsPage onNavigate={handleNavigate} />;
         case 'skill-gaps':
@@ -132,7 +143,7 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col selection:bg-blue-600 selection:text-white antialiased">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-800 dark:text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white antialiased transition-colors duration-200">
       {/* Global Top Navigation Header (Always Visible) */}
       <Navbar
         currentView={currentView}
@@ -151,9 +162,14 @@ function MainApp() {
           initialTab={authModalInitialTab}
           onClose={() => setIsAuthModalOpen(false)}
           onSuccess={(loggedInUser) => {
-            if (loggedInUser.role === 'admin') setCurrentView('admin');
-            else if (loggedInUser.role === 'recruiter') setCurrentView('recruiter');
-            else setCurrentView('dashboard');
+            if (loggedInUser.role === 'admin') {
+              setCurrentView('admin:overview');
+            } else if (loggedInUser.role === 'recruiter') {
+              setCurrentView('recruiter');
+            } else {
+              setCurrentView('dashboard');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
         />
       )}
@@ -163,10 +179,12 @@ function MainApp() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <MainApp />
-      </AuthProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <MainApp />
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }

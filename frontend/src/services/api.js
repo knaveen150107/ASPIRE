@@ -358,6 +358,13 @@ class ApiClient {
     return res.data;
   }
 
+  async deleteUser(userId) {
+    const res = await this.request(`/users/${userId}`, {
+      method: 'DELETE',
+    });
+    return res.data;
+  }
+
   async getAuditLogs(limit = 50) {
     const res = await this.request(`/audit?limit=${limit}`);
     return res.data || [];

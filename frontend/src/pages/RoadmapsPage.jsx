@@ -143,28 +143,28 @@ export default function RoadmapsPage() {
   const progressPercentage = Math.round((completedStepsCount / totalStepsCount) * 100);
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
+    <div className="bg-[#f8fafc] dark:bg-[#090d16] min-h-screen py-8 text-slate-800 dark:text-slate-100 animate-fade-in transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Banner */}
-        <div className="rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
+        <div className="rounded-3xl p-8 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                 <Sparkles className="w-3.5 h-3.5" />
                 Structured Milestone Curricula
               </div>
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Remedial & Career Learning Roadmaps
               </h1>
-              <p className="text-slate-500 text-xs sm:text-sm max-w-2xl font-normal">
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl font-normal">
                 Follow curated weekly modules with authoritative documentation, hands-on tasks, and real-time progress checkoffs.
               </p>
             </div>
 
-            <div className="px-4 py-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-center">
-              <div className="text-xl font-extrabold text-blue-700">{roadmaps.length}</div>
-              <div className="text-[10px] text-blue-600 font-bold uppercase">Enrolled Paths</div>
+            <div className="px-4 py-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
+              <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{roadmaps.length}</div>
+              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Enrolled Paths</div>
             </div>
           </div>
 
@@ -179,7 +179,7 @@ export default function RoadmapsPage() {
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
                     isSelected
                       ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                      : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
                   <Layers className="w-4 h-4" />
@@ -194,38 +194,38 @@ export default function RoadmapsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left: Summary & Progress Meter */}
-          <div className="card-3d p-8 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-6">
+          <div className="card-3d p-8 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-6 transition-colors">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Curriculum Overview</span>
-              <h3 className="text-lg font-bold text-slate-900 mt-1">{selectedRoadmap.title}</h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Curriculum Overview</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">{selectedRoadmap.title}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 {selectedRoadmap.description}
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-3">
               <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-700">Completion Milestone</span>
-                <span className="text-blue-600">{progressPercentage}%</span>
+                <span className="text-slate-700 dark:text-slate-300">Completion Milestone</span>
+                <span className="text-blue-600 dark:text-blue-400">{progressPercentage}%</span>
               </div>
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-blue-600 transition-all duration-300"
+                  className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-300"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 {completedStepsCount} of {totalStepsCount} modules completed
               </p>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-500">
+            <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-400" />
-                Estimated Duration: <strong className="text-slate-800">{selectedRoadmap.duration_weeks || 4} Weeks</strong>
+                Estimated Duration: <strong className="text-slate-800 dark:text-slate-200">{selectedRoadmap.duration_weeks || 4} Weeks</strong>
               </div>
               <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-emerald-600" />
+                <Award className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 Verified Certificate upon module completion
               </div>
             </div>
@@ -233,8 +233,8 @@ export default function RoadmapsPage() {
 
           {/* Right 2 Cols: Step-by-Step Milestones */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-600" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               Learning Modules & Action Items
             </h3>
 
@@ -242,32 +242,32 @@ export default function RoadmapsPage() {
               {selectedRoadmap.steps.map((step, idx) => (
                 <div
                   key={step.id || idx}
-                  className={`p-6 rounded-3xl border transition space-y-3 bg-white ${
+                  className={`p-6 rounded-3xl border transition space-y-3 bg-white dark:bg-slate-900/90 ${
                     step.completed
-                      ? 'border-emerald-200 shadow-xs'
-                      : 'border-slate-200/80 shadow-xs hover:border-slate-300'
+                      ? 'border-emerald-200 dark:border-emerald-800/80 shadow-xs'
+                      : 'border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
                       <button
                         onClick={() => toggleStepCompletion(step.id)}
-                        className="mt-0.5 text-slate-400 hover:text-emerald-600 transition"
+                        className="mt-0.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
                         title="Toggle completion status"
                       >
                         {step.completed ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                         ) : (
-                          <Circle className="w-5 h-5 text-slate-400 hover:text-slate-600" />
+                          <Circle className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
                         )}
                       </button>
                       <div>
                         <h4 className={`text-sm font-bold transition ${
-                          step.completed ? 'line-through text-slate-400' : 'text-slate-900'
+                          step.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'
                         }`}>
                           {step.title}
                         </h4>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                           {step.description}
                         </p>
                       </div>
@@ -275,21 +275,21 @@ export default function RoadmapsPage() {
 
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                       step.completed
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                     }`}>
                       {step.completed ? 'Completed' : 'Pending'}
                     </span>
                   </div>
 
                   {step.resource_url && (
-                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-400">Curated Reference:</span>
+                    <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Curated Reference:</span>
                       <a
                         href={step.resource_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition"
+                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition"
                       >
                         {step.resource_label || 'Read Blueprint'} <ExternalLink className="w-3.5 h-3.5" />
                       </a>

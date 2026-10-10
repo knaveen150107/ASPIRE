@@ -265,7 +265,7 @@ export default function MockTestsPage() {
   };
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
+    <div className="bg-[#f8fafc] dark:bg-[#090d16] min-h-screen py-8 text-slate-800 dark:text-slate-100 animate-fade-in transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Active Test Taking View */}
@@ -273,21 +273,21 @@ export default function MockTestsPage() {
           <div className="max-w-4xl mx-auto space-y-6">
             
             {/* Active Test Header Bar */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm flex items-center justify-between">
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between transition-colors">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
                   <BrainCircuit className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">{activeAssessment.title}</h3>
-                  <p className="text-xs text-slate-500">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{activeAssessment.title}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Question {currentQuestionIdx + 1} of {activeAssessment.questions.length}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-mono text-xs font-bold">
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-mono text-xs font-bold">
                   <Clock className="w-4 h-4" />
                   {formatTime(timeLeft)}
                 </div>
@@ -301,7 +301,7 @@ export default function MockTestsPage() {
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-600 transition-all duration-300"
                 style={{
@@ -314,15 +314,15 @@ export default function MockTestsPage() {
             {(() => {
               const q = activeAssessment.questions[currentQuestionIdx];
               return (
-                <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-lg space-y-6">
+                <div className="p-8 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-lg space-y-6 transition-colors">
                   <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                       Topic: {q.topic}
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">Single Choice Question</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Single Choice Question</span>
                   </div>
 
-                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-snug">
                     {q.question}
                   </h2>
 
@@ -335,30 +335,30 @@ export default function MockTestsPage() {
                           onClick={() => handleSelectOption(q.id, option)}
                           className={`w-full p-4 rounded-2xl border text-left font-medium text-sm transition flex items-center justify-between ${
                             isSelected
-                              ? 'bg-blue-50 border-blue-600 text-blue-900 shadow-xs'
-                              : 'bg-slate-50/60 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white'
+                              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-200 shadow-xs'
+                              : 'bg-slate-50/60 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-white dark:hover:bg-slate-800'
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold ${
-                              isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
+                              isSelected ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                             }`}>
                               {String.fromCharCode(65 + optIdx)}
                             </span>
                             <span>{option}</span>
                           </div>
-                          {isSelected && <Check className="w-5 h-5 text-blue-600" />}
+                          {isSelected && <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
                         </button>
                       );
                     })}
                   </div>
 
                   {/* Navigation */}
-                  <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                  <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <button
                       onClick={() => setCurrentQuestionIdx((p) => Math.max(0, p - 1))}
                       disabled={currentQuestionIdx === 0}
-                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold disabled:opacity-40 flex items-center gap-1 transition"
+                      className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold disabled:opacity-40 flex items-center gap-1 transition"
                     >
                       <ChevronLeft className="w-4 h-4" /> Previous
                     </button>
@@ -386,35 +386,35 @@ export default function MockTestsPage() {
         ) : testResult ? (
           /* Scorecard Review View */
           <div className="max-w-4xl mx-auto space-y-6">
-            <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-lg text-center space-y-5">
-              <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+            <div className="p-8 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-lg text-center space-y-5 transition-colors">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-inner">
                 <Award className="w-8 h-8" />
               </div>
 
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Assessment Result</span>
-                <h2 className="text-2xl font-extrabold text-slate-900 mt-1">{testResult.assessmentTitle}</h2>
-                <div className="mt-4 text-5xl font-black text-blue-600">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Assessment Result</span>
+                <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1">{testResult.assessmentTitle}</h2>
+                <div className="mt-4 text-5xl font-black text-blue-600 dark:text-blue-400">
                   {testResult.score}%
                 </div>
-                <p className="text-slate-500 text-xs sm:text-sm mt-2">
-                  You scored <strong className="text-slate-800">{testResult.correct}</strong> out of <strong className="text-slate-800">{testResult.total}</strong> questions correctly.
+                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-2">
+                  You scored <strong className="text-slate-800 dark:text-slate-200">{testResult.correct}</strong> out of <strong className="text-slate-800 dark:text-slate-200">{testResult.total}</strong> questions correctly.
                 </p>
               </div>
 
               {/* Topic Breakdown */}
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">Topic-Wise Competency Breakdown</h4>
+              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-left space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Topic-Wise Competency Breakdown</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {Object.entries(testResult.topicBreakdown).map(([topic, stats]) => {
                     const pct = Math.round((stats.correct / stats.total) * 100);
                     return (
-                      <div key={topic} className="p-3 rounded-xl bg-white border border-slate-200 space-y-1.5">
+                      <div key={topic} className="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1.5">
                         <div className="flex justify-between text-xs font-bold">
-                          <span className="text-slate-800">{topic}</span>
-                          <span className={pct >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{pct}%</span>
+                          <span className="text-slate-800 dark:text-slate-200">{topic}</span>
+                          <span className={pct >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>{pct}%</span>
                         </div>
-                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
                           <div
                             className={`h-full ${pct >= 70 ? 'bg-emerald-500' : 'bg-amber-500'}`}
                             style={{ width: `${pct}%` }}
@@ -438,42 +438,42 @@ export default function MockTestsPage() {
 
             {/* Questions Detailed Breakdown */}
             <div className="space-y-3.5">
-              <h3 className="text-lg font-bold text-slate-900">Itemized Solutions & Explanations</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Itemized Solutions & Explanations</h3>
               {testResult.detailedFeedback.map((item, idx) => (
                 <div
                   key={idx}
-                  className={`p-6 rounded-2xl border space-y-3 bg-white ${
-                    item.is_correct ? 'border-emerald-200' : 'border-rose-200'
+                  className={`p-6 rounded-2xl border space-y-3 bg-white dark:bg-slate-900/90 transition-colors ${
+                    item.is_correct ? 'border-emerald-200 dark:border-emerald-800/80' : 'border-rose-200 dark:border-rose-800/80'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <h4 className="font-bold text-slate-900 text-sm">
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
                       {idx + 1}. {item.question}
                     </h4>
                     {item.is_correct ? (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                         <Check className="w-3 h-3" /> Correct
                       </span>
                     ) : (
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 flex items-center gap-1">
                         <X className="w-3 h-3" /> Incorrect
                       </span>
                     )}
                   </div>
 
                   <div className="text-xs space-y-1">
-                    <p className="text-slate-600">
-                      Your Answer: <strong className={item.is_correct ? 'text-emerald-700' : 'text-rose-700'}>{item.selected_option}</strong>
+                    <p className="text-slate-600 dark:text-slate-300">
+                      Your Answer: <strong className={item.is_correct ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}>{item.selected_option}</strong>
                     </p>
                     {!item.is_correct && (
-                      <p className="text-slate-600">
-                        Correct Answer: <strong className="text-emerald-700">{item.correct_option}</strong>
+                      <p className="text-slate-600 dark:text-slate-300">
+                        Correct Answer: <strong className="text-emerald-700 dark:text-emerald-400">{item.correct_option}</strong>
                       </p>
                     )}
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-                    <span className="font-bold text-blue-700">Explanation: </span>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+                    <span className="font-bold text-blue-700 dark:text-blue-400">Explanation: </span>
                     {item.explanation}
                   </div>
                 </div>
@@ -483,29 +483,29 @@ export default function MockTestsPage() {
         ) : (
           /* Catalog View */
           <>
-            <div className="rounded-3xl p-8 bg-white border border-slate-200/80 shadow-xs space-y-6">
+            <div className="rounded-3xl p-8 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-1.5">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     <Sparkles className="w-3.5 h-3.5" />
                     Adaptive Diagnostic Testing Engine
                   </div>
-                  <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                  <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                     Placement Mock Assessments
                   </h1>
-                  <p className="text-slate-500 text-xs sm:text-sm max-w-2xl font-normal">
+                  <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl font-normal">
                     Simulate real company hiring assessments for software engineering, product, and quant roles.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-                    <div className="text-xl font-extrabold text-slate-900">{SAMPLE_ASSESSMENTS.length}</div>
+                  <div className="px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+                    <div className="text-xl font-extrabold text-slate-900 dark:text-white">{SAMPLE_ASSESSMENTS.length}</div>
                     <div className="text-[10px] text-slate-400 font-bold uppercase">Standard Tests</div>
                   </div>
-                  <div className="px-4 py-2.5 rounded-2xl bg-blue-50 border border-blue-200 text-center">
-                    <div className="text-xl font-extrabold text-blue-700">{pastTests.length}</div>
-                    <div className="text-[10px] text-blue-600 font-bold uppercase">Completed</div>
+                  <div className="px-4 py-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
+                    <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{pastTests.length}</div>
+                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Completed</div>
                   </div>
                 </div>
               </div>
@@ -516,34 +516,34 @@ export default function MockTestsPage() {
               {SAMPLE_ASSESSMENTS.map((assessment) => (
                 <div
                   key={assessment.id}
-                  className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 transition flex flex-col justify-between group shadow-xs"
+                  className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition flex flex-col justify-between group shadow-xs"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         {assessment.category}
                       </span>
-                      <span className="flex items-center gap-1 text-xs text-slate-500 font-medium">
+                      <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
                         <Clock className="w-3.5 h-3.5" />
                         {assessment.duration_mins} mins
                       </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                       {assessment.title}
                     </h3>
 
-                    <p className="text-xs text-slate-500 leading-relaxed font-normal">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
                       Evaluate problem solving, complexity analysis, and algorithms with {assessment.questions.length} adaptive multiple-choice questions.
                     </p>
 
-                    <div className="pt-2 flex items-center gap-1 text-xs text-slate-500">
+                    <div className="pt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                       <Zap className="w-3.5 h-3.5 text-amber-500" />
-                      Difficulty: <span className="font-bold text-slate-800 capitalize">{assessment.difficulty}</span>
+                      Difficulty: <span className="font-bold text-slate-800 dark:text-slate-200 capitalize">{assessment.difficulty}</span>
                     </div>
                   </div>
 
-                  <div className="pt-5 border-t border-slate-100 mt-4">
+                  <div className="pt-5 border-t border-slate-100 dark:border-slate-800 mt-4">
                     <button
                       onClick={() => startAssessment(assessment)}
                       className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2"
@@ -558,15 +558,15 @@ export default function MockTestsPage() {
 
             {/* Past History Table */}
             {pastTests.length > 0 && (
-              <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-600" />
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   Assessment History & Progress
                 </h3>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="text-slate-500 border-b border-slate-100 uppercase font-bold text-[10px]">
+                    <thead className="text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800 uppercase font-bold text-[10px]">
                       <tr>
                         <th className="py-3 px-4">Test Title</th>
                         <th className="py-3 px-4">Category</th>
@@ -575,17 +575,17 @@ export default function MockTestsPage() {
                         <th className="py-3 px-4">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                       {pastTests.map((t, idx) => (
-                        <tr key={t._id || idx} className="hover:bg-slate-50 transition">
-                          <td className="py-3.5 px-4 font-bold text-slate-900">{t.title}</td>
+                        <tr key={t._id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">{t.title}</td>
                           <td className="py-3.5 px-4 capitalize">{t.category}</td>
                           <td className="py-3.5 px-4">{t.total_questions || 10}</td>
                           <td className="py-3.5 px-4">
-                            <span className="font-extrabold text-emerald-600">{t.score}%</span>
+                            <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{t.score}%</span>
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                               {t.status || 'Completed'}
                             </span>
                           </td>

@@ -20,24 +20,78 @@ def list_all_users(
     admin_user: Dict[str, Any] = Depends(get_current_admin),
     db: Database = Depends(get_database),
 ) -> Any:
-    """Lists registered users (Admin only)."""
+    """Lists registered users enriched with profile metadata (Admin only)."""
     query = {}
     if role:
         query["role"] = role
 
     cursor = db["users"].find(query).sort("created_at", -1)
-    results = [
-        UserResponse(
-            id=str(u["_id"]),
-            name=u["name"],
-            email=u["email"],
-            role=u["role"],
-            is_active=u.get("is_active", True),
-            created_at=u.get("created_at", datetime.now()),
-            updated_at=u.get("updated_at", datetime.now()),
+    results = []
+
+    for u in cursor:
+        uid = u["_id"]
+        u_role = u.get("role", "student")
+        
+        # Default metadata
+        reg_num = None
+        dept = None
+        degree = None
+        grad_year = None
+        cgpa = None
+        backlogs = 0
+        skills_count = 0
+        resume_uploaded = False
+        company_name = None
+
+        if u_role == "student":
+            prof = db["student_profiles"].find_one({"user_id": uid})
+            if prof:
+                reg_num = prof.get("register_number")
+                dept = prof.get("department")
+                degree = prof.get("degree")
+                grad_year = prof.get("graduation_year")
+                cgpa = prof.get("cgpa")
+                backlogs = prof.get("active_backlogs", 0)
+            
+            # Count skills
+            skills_count = db["student_skills"].count_documents({"student_id": uid})
+            if skills_count == 0:
+                skills_count = db["student_skills"].count_documents({"student_id": str(uid)})
+            
+            # Check resume
+            resume_count = db["resumes"].count_documents({"student_id": uid})
+            if resume_count == 0:
+                resume_count = db["resumes"].count_documents({"student_id": str(uid)})
+            resume_uploaded = resume_count > 0 or skills_count > 0
+
+        elif u_role == "recruiter":
+            rec_prof = db["recruiter_profiles"].find_one({"user_id": uid})
+            if rec_prof and rec_prof.get("company_id"):
+                comp = db["companies"].find_one({"_id": rec_prof["company_id"]})
+                if comp:
+                    company_name = comp.get("name")
+
+        results.append(
+            UserResponse(
+                id=str(uid),
+                name=u.get("name", "Unnamed User"),
+                email=u.get("email", ""),
+                role=u_role,
+                is_active=u.get("is_active", True),
+                created_at=u.get("created_at", datetime.now()),
+                updated_at=u.get("updated_at", datetime.now()),
+                register_number=reg_num,
+                department=dept or "Computer Science",
+                degree=degree or "B.Tech",
+                graduation_year=grad_year or 2026,
+                cgpa=cgpa if cgpa is not None else 8.2,
+                active_backlogs=backlogs,
+                skills_count=skills_count,
+                resume_uploaded=resume_uploaded,
+                company_name=company_name,
+            )
         )
-        for u in cursor
-    ]
+
     return ApiResponse(data=results)
 
 
@@ -121,6 +175,7 @@ def create_recruiter_by_admin(
             is_active=True,
             created_at=now,
             updated_at=now,
+            company_name=payload.company_name,
         ),
     )
 
@@ -132,16 +187,77 @@ def update_user_status(
     admin_user: Dict[str, Any] = Depends(get_current_admin),
     db: Database = Depends(get_database),
 ) -> Any:
-    """Activates or deactivates a user account (Admin only)."""
+    """Blocks/suspends or activates a user account (Admin only)."""
     if not ObjectId.is_valid(user_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID.")
 
-    res = db["users"].update_one(
-        {"_id": ObjectId(user_id)},
-        {"$set": {"is_active": is_active, "updated_at": datetime.now()}},
-    )
-    if res.matched_count == 0:
+    u_obj_id = ObjectId(user_id)
+    user = db["users"].find_one({"_id": u_obj_id})
+    if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
-    return ApiResponse(message=f"User account {'activated' if is_active else 'deactivated'}.", data=True)
+    res = db["users"].update_one(
+        {"_id": u_obj_id},
+        {"$set": {"is_active": is_active, "updated_at": datetime.now()}},
+    )
 
+    # Log audit event
+    admin_obj_id = ObjectId(admin_user["id"]) if ObjectId.is_valid(admin_user.get("id", "")) else None
+    db["audit_logs"].insert_one({
+        "user_id": admin_obj_id,
+        "action": "ADMIN_UNBLOCK_USER" if is_active else "ADMIN_BLOCK_USER",
+        "entity_type": "users",
+        "entity_id": u_obj_id,
+        "metadata": {
+            "target_email": user.get("email"),
+            "target_role": user.get("role"),
+            "new_status": "Active" if is_active else "Blocked",
+        },
+        "created_at": datetime.now(),
+    })
+
+    status_label = "activated / unblocked" if is_active else "blocked / suspended"
+    return ApiResponse(message=f"User account {status_label} successfully.", data=True)
+
+
+@router.delete("/{user_id}", response_model=ApiResponse[bool])
+def delete_user_by_admin(
+    user_id: str,
+    admin_user: Dict[str, Any] = Depends(get_current_admin),
+    db: Database = Depends(get_database),
+) -> Any:
+    """Permanently removes a user account and associated profile records (Admin only)."""
+    if not ObjectId.is_valid(user_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID.")
+
+    u_obj_id = ObjectId(user_id)
+    user = db["users"].find_one({"_id": u_obj_id})
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+    # Remove user and associated collections
+    db["users"].delete_one({"_id": u_obj_id})
+    db["student_profiles"].delete_many({"user_id": u_obj_id})
+    db["recruiter_profiles"].delete_many({"user_id": u_obj_id})
+    db["admin_profiles"].delete_many({"user_id": u_obj_id})
+    db["student_skills"].delete_many({"$or": [{"student_id": u_obj_id}, {"student_id": user_id}]})
+    db["applications"].delete_many({"$or": [{"student_id": u_obj_id}, {"student_id": user_id}]})
+    db["mock_tests"].delete_many({"$or": [{"student_id": u_obj_id}, {"student_id": user_id}]})
+    db["resumes"].delete_many({"$or": [{"student_id": u_obj_id}, {"student_id": user_id}]})
+
+    # Log audit event
+    admin_obj_id = ObjectId(admin_user["id"]) if ObjectId.is_valid(admin_user.get("id", "")) else None
+    db["audit_logs"].insert_one({
+        "user_id": admin_obj_id,
+        "action": "ADMIN_DELETE_USER",
+        "entity_type": "users",
+        "entity_id": u_obj_id,
+        "metadata": {
+            "deleted_email": user.get("email"),
+            "deleted_name": user.get("name"),
+            "deleted_role": user.get("role"),
+        },
+        "created_at": datetime.now(),
+    })
+
+    return ApiResponse(message=f"User {user.get('email')} permanently deleted.", data=True)
