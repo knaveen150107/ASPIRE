@@ -9,7 +9,15 @@ import {
   Sparkles,
   Award,
   Send,
-  GraduationCap
+  GraduationCap,
+  Clock,
+  Check,
+  ArrowRight,
+  FileText,
+  Activity,
+  Layers,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +32,7 @@ export default function JobsPage({ onNavigate }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedDegree, setSelectedDegree] = useState('All');
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'applied'
 
   // Selected job for eligibility modal
   const [auditJob, setAuditJob] = useState(null);
@@ -38,7 +47,7 @@ export default function JobsPage({ onNavigate }) {
       setAiFitJob(job);
       setAiFitResult(null);
       setLoadingAiFit(true);
-      const res = await api.explainJobFitAi(job._id);
+      const res = await api.explainJobFitAi(job._id || job.id);
       setAiFitResult(res);
     } catch (err) {
       toast.error(err.message || 'Failed to analyze job fit with AI');
@@ -59,6 +68,7 @@ export default function JobsPage({ onNavigate }) {
   const [onlyEligibleCgpa, setOnlyEligibleCgpa] = useState(true);
 
   // My submitted applications
+  const [myApplications, setMyApplications] = useState([]);
   const [myAppliedJobIds, setMyAppliedJobIds] = useState(new Set());
 
   const fetchJobsAndUserData = async () => {
@@ -76,7 +86,9 @@ export default function JobsPage({ onNavigate }) {
       }
 
       if (appsRes.status === 'fulfilled' && appsRes.value) {
-        const ids = new Set((appsRes.value || []).map((a) => a.job_id || a.id));
+        const apps = appsRes.value || [];
+        setMyApplications(apps);
+        const ids = new Set(apps.map((a) => a.job_id || a.id));
         setMyAppliedJobIds(ids);
       }
 
@@ -115,11 +127,18 @@ export default function JobsPage({ onNavigate }) {
 
     try {
       setIsSubmittingApp(true);
-      await api.applyJob(targetJobId, selectedResumeId || undefined, applicationNotes);
+      const newApp = await api.applyJob(targetJobId, selectedResumeId || undefined, applicationNotes);
       toast.success(`Successfully applied to ${applyingJob.title} at ${applyingJob.company_name || 'Company'}!`);
       setMyAppliedJobIds((prev) => new Set([...prev, targetJobId]));
+      if (newApp) {
+        setMyApplications((prev) => [newApp, ...prev]);
+      }
       setApplyingJob(null);
       setApplicationNotes('');
+      // Reload full applications list
+      api.getMyApplications().then((res) => {
+        if (res) setMyApplications(res);
+      }).catch(() => {});
     } catch (err) {
       toast.error(err.message || 'Failed to submit application');
     } finally {
@@ -157,6 +176,25 @@ export default function JobsPage({ onNavigate }) {
 
     return matchesSearch && matchesDept && matchesDegree && matchesCgpa;
   });
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'offered':
+        return { label: 'Offer Received 🏆', bg: 'bg-emerald-500 text-white shadow-xs' };
+      case 'interview_scheduled':
+        return { label: 'Interview Scheduled', bg: 'bg-blue-600 text-white shadow-xs' };
+      case 'assessment_scheduled':
+        return { label: 'Assessment Scheduled', bg: 'bg-purple-600 text-white shadow-xs' };
+      case 'shortlisted':
+        return { label: 'Shortlisted for Rounds', bg: 'bg-emerald-600 text-white shadow-xs' };
+      case 'in_review':
+        return { label: 'Under Review', bg: 'bg-amber-500 text-white shadow-xs' };
+      case 'rejected':
+        return { label: 'Application Closed', bg: 'bg-rose-500 text-white shadow-xs' };
+      default:
+        return { label: 'Application Submitted', bg: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' };
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950/70 py-8 text-slate-800 dark:text-slate-100 animate-fade-in transition-colors">
@@ -232,172 +270,410 @@ export default function JobsPage({ onNavigate }) {
             </div>
           </div>
 
-          {/* CGPA Eligibility Quick Filter */}
+          {/* View Mode Tabs & CGPA Quick Filter */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-slate-500 dark:text-slate-400">Your Verified Academic CGPA:</span>
-              <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-extrabold text-xs">
-                {studentCgpa}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
+            {/* View Mode Tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
               <button
                 type="button"
-                onClick={() => setOnlyEligibleCgpa(!onlyEligibleCgpa)}
-                className={`px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
-                  onlyEligibleCgpa
-                    ? 'bg-emerald-500 text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                onClick={() => setActiveTab('all')}
+                className={`px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 ${
+                  activeTab === 'all'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                {onlyEligibleCgpa ? '✓ Showing Drives for My CGPA (Cutoff ≤ ' + studentCgpa + ')' : 'Showing All Cutoffs'}
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>All Placement Drives</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                  {filteredJobs.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('applied')}
+                className={`px-4 py-2 rounded-xl font-bold text-xs transition flex items-center gap-2 ${
+                  activeTab === 'applied'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>My Applied Jobs</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 font-extrabold">
+                  {myApplications.length}
+                </span>
               </button>
             </div>
+
+            {/* CGPA Eligibility Quick Filter */}
+            {activeTab === 'all' && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500 dark:text-slate-400">Your CGPA:</span>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-extrabold text-xs">
+                    {studentCgpa}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setOnlyEligibleCgpa(!onlyEligibleCgpa)}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+                    onlyEligibleCgpa
+                      ? 'bg-emerald-500 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {onlyEligibleCgpa ? '✓ Cutoff ≤ ' + studentCgpa : 'Showing All Cutoffs'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Jobs Grid */}
-        {loading ? (
-          <div className="min-h-[40vh] flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
-              <p className="text-slate-500 dark:text-slate-400 text-xs">Matching opportunities with your profile...</p>
+        {/* Content View: Applied Jobs Tracker vs All Jobs Grid */}
+        {activeTab === 'applied' ? (
+          /* ========================================================================= */
+          /* APPLIED JOBS TRACKER VIEW                                                */
+          /* ========================================================================= */
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  My Applied Jobs & Live Recruitment Pipeline ({myApplications.length})
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Track the real-time screening, interview schedules, and offer status for every campus drive you applied to.
+                </p>
+              </div>
             </div>
-          </div>
-        ) : filteredJobs.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl space-y-3">
-            <Briefcase className="w-10 h-10 text-slate-400 mx-auto" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">No placement drives found</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-xs">Try resetting your department or query filters.</p>
-            <button
-              onClick={() => { setSearchQuery(''); setSelectedDept('All'); setSelectedDegree('All'); }}
-              className="mt-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
-            >
-              Reset All Filters
-            </button>
+
+            {loading ? (
+              <div className="min-h-[30vh] flex items-center justify-center">
+                <div className="w-8 h-8 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+              </div>
+            ) : myApplications.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl space-y-4">
+                <Briefcase className="w-12 h-12 text-slate-400 mx-auto" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">You haven't applied to any jobs yet</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-xs max-w-md mx-auto">
+                  Browse through verified campus drives matching your CGPA and click "Apply" to submit your profile with 1-click.
+                </p>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/25 transition inline-flex items-center gap-2"
+                >
+                  <Briefcase className="w-4 h-4" />
+                  Explore Placement Drives Now
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {myApplications.map((app) => {
+                  const statusInfo = getStatusBadge(app.status);
+                  const appliedDate = app.applied_at 
+                    ? new Date(app.applied_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                    : 'Recently';
+
+                  // Corresponding job details if available in jobs list
+                  const matchedJob = jobs.find((j) => (j.id || j._id) === app.job_id) || {};
+                  const companyName = app.company_name || matchedJob.company_name || 'Enterprise Partner';
+                  const jobTitle = app.job_title || matchedJob.title || 'Software Engineer';
+                  const location = app.job_location || matchedJob.location || 'Remote / Hybrid';
+                  const salary = app.salary_range || matchedJob.salary_range || matchedJob.package_details || 'Competitive Package';
+                  const jobType = app.job_type || matchedJob.job_type || matchedJob.employment_type || 'Full Time';
+
+                  // Calculate stage index: 1: Applied, 2: Screened, 3: Assessment, 4: Interview, 5: Offer
+                  let stageIdx = 1;
+                  if (app.status === 'in_review') stageIdx = 2;
+                  if (app.status === 'shortlisted' || app.status === 'assessment_scheduled') stageIdx = 3;
+                  if (app.status === 'interview_scheduled') stageIdx = 4;
+                  if (app.status === 'offered') stageIdx = 5;
+
+                  return (
+                    <div
+                      key={app.id || app._id}
+                      className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition flex flex-col justify-between shadow-xs space-y-4 group"
+                    >
+                      <div className="space-y-3.5">
+                        {/* Header: Company & Status Badge */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-extrabold text-base">
+                              {companyName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                <Building2 className="w-3.5 h-3.5" />
+                                {companyName}
+                              </h4>
+                              <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition mt-0.5">
+                                {jobTitle}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusInfo.bg}`}>
+                            {statusInfo.label}
+                          </span>
+                        </div>
+
+                        {/* Location, Salary & Type */}
+                        <div className="flex flex-wrap items-center gap-3 py-2 border-y border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {location}
+                          </span>
+                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                            <DollarSign className="w-3.5 h-3.5" />
+                            {salary}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 capitalize">
+                            {jobType}
+                          </span>
+                        </div>
+
+                        {/* 5-Stage Recruitment Progress Timeline */}
+                        <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">
+                          <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                            <span className="flex items-center gap-1">
+                              <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                              Hiring Stage Pipeline
+                            </span>
+                            <span className="text-blue-600 dark:text-blue-400 font-mono">Stage {stageIdx} of 5</span>
+                          </div>
+
+                          {/* Progress Line */}
+                          <div className="grid grid-cols-5 gap-1.5 pt-1">
+                            {[
+                              { label: 'Applied', step: 1 },
+                              { label: 'Screening', step: 2 },
+                              { label: 'Assessment', step: 3 },
+                              { label: 'Interview', step: 4 },
+                              { label: 'Offer', step: 5 },
+                            ].map((stage) => {
+                              const isCompleted = stage.step <= stageIdx;
+                              const isCurrent = stage.step === stageIdx;
+                              return (
+                                <div key={stage.step} className="text-center space-y-1">
+                                  <div
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                      isCompleted
+                                        ? 'bg-blue-600'
+                                        : 'bg-slate-200 dark:bg-slate-700'
+                                    }`}
+                                  ></div>
+                                  <span className={`block text-[10px] font-semibold truncate ${
+                                    isCurrent 
+                                      ? 'text-blue-600 dark:text-blue-400 font-bold' 
+                                      : isCompleted 
+                                        ? 'text-slate-700 dark:text-slate-300' 
+                                        : 'text-slate-400 dark:text-slate-500'
+                                  }`}>
+                                    {stage.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Applied Metadata & Notes */}
+                        <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Submitted on: <strong className="text-slate-700 dark:text-slate-200">{appliedDate}</strong></span>
+                          </div>
+                          {app.notes && (
+                            <div className="p-2.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/60 text-[11px] text-blue-900 dark:text-blue-200">
+                              <span className="font-bold">Your Application Pitch:</span> "{app.notes}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action Footer */}
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                          <Check className="w-3.5 h-3.5" /> Profile Active
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleExplainAiFit(matchedJob._id ? matchedJob : { _id: app.job_id, title: jobTitle, company_name: companyName })}
+                            className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 text-xs font-bold transition flex items-center gap-1"
+                          >
+                            <Sparkles className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                            AI Fit
+                          </button>
+
+                          {onNavigate && (
+                            <button
+                              onClick={() => onNavigate('mock-tests')}
+                              className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition flex items-center gap-1"
+                            >
+                              <span>Prepare Test</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredJobs.map((job) => {
-              const jobId = job.id || job._id;
-              const hasApplied = myAppliedJobIds.has(jobId);
-              const minCgpa = job.min_cgpa ?? job.eligibility_criteria?.min_cgpa ?? 0;
-              const maxBacklogs = job.max_backlogs ?? job.eligibility_criteria?.max_backlogs_allowed ?? 0;
-              const salaryDisplay = (typeof job.package_details === 'string' ? job.package_details : null) || job.salary_range || 'Competitive Package';
-              const jobTypeDisplay = (job.employment_type ? job.employment_type.replace('_', ' ') : null) || job.job_type || 'Full Time';
-
-              return (
-                <div
-                  key={jobId}
-                  className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between group shadow-xs"
-                >
-                  <div>
-                    {/* Top Bar: Company & Status */}
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold text-sm">
-                          {job.company_name ? job.company_name.charAt(0).toUpperCase() : 'C'}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                            <Building2 className="w-3.5 h-3.5" />
-                            {job.company_name || 'Enterprise Partner'}
-                          </h4>
-                          <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition mt-0.5">
-                            {job.title}
-                          </h3>
-                        </div>
-                      </div>
-
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 capitalize">
-                        {jobTypeDisplay}
-                      </span>
-                    </div>
-
-                    {/* Location & Package Details */}
-                    <div className="flex flex-wrap items-center gap-3 py-2.5 border-y border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
-                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                        <MapPin className="w-3.5 h-3.5" />
-                        {job.location || 'Remote / Hybrid'}
-                      </span>
-                      {salaryDisplay && (
-                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                          <DollarSign className="w-3.5 h-3.5" />
-                          {salaryDisplay}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Description snippet */}
-                    <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-normal">
-                      {job.description || 'Join our high-growth engineering team to build enterprise grade distributed systems and AI solutions.'}
-                    </p>
-
-                    {/* Skills tags */}
-                    {job.required_skills && job.required_skills.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {job.required_skills.slice(0, 4).map((sk, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700"
-                          >
-                            {sk}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Academic Criteria Badge */}
-                    <div className="mt-3.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                      <span className="flex items-center gap-1 font-medium">
-                        <GraduationCap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        Min CGPA: <strong className="text-slate-800 dark:text-slate-200">{minCgpa > 0 ? minCgpa : 'No Cutoff'}</strong>
-                      </span>
-                      <span>Max Backlogs: <strong className="text-slate-800 dark:text-slate-200">{maxBacklogs}</strong></span>
-                    </div>
-                  </div>
-
-                  {/* Card Actions */}
-                  <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => handleExplainAiFit(job)}
-                      className="py-2 px-3 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800/80 transition flex items-center justify-center gap-1.5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                      AI Fit
-                    </button>
-
-                    <button
-                      onClick={() => setAuditJob(job)}
-                      className="flex-1 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center justify-center gap-1.5"
-                    >
-                      <Award className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                      Audit
-                    </button>
-
-                    {hasApplied ? (
-                      <button
-                        disabled
-                        className="px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1 cursor-default"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Applied
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setApplyingJob(job)}
-                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        Apply
-                      </button>
-                    )}
-                  </div>
+          /* ========================================================================= */
+          /* ALL PLACEMENT DRIVES GRID VIEW                                           */
+          /* ========================================================================= */
+          <>
+            {loading ? (
+              <div className="min-h-[40vh] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 border-3 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs">Matching opportunities with your profile...</p>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            ) : filteredJobs.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-3xl space-y-3">
+                <Briefcase className="w-10 h-10 text-slate-400 mx-auto" />
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">No placement drives found</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-xs">Try resetting your department or query filters.</p>
+                <button
+                  onClick={() => { setSearchQuery(''); setSelectedDept('All'); setSelectedDegree('All'); }}
+                  className="mt-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredJobs.map((job) => {
+                  const jobId = job.id || job._id;
+                  const hasApplied = myAppliedJobIds.has(jobId);
+                  const minCgpa = job.min_cgpa ?? job.eligibility_criteria?.min_cgpa ?? 0;
+                  const maxBacklogs = job.max_backlogs ?? job.eligibility_criteria?.max_backlogs_allowed ?? 0;
+                  const salaryDisplay = (typeof job.package_details === 'string' ? job.package_details : null) || job.salary_range || 'Competitive Package';
+                  const jobTypeDisplay = (job.employment_type ? job.employment_type.replace('_', ' ') : null) || job.job_type || 'Full Time';
+
+                  return (
+                    <div
+                      key={jobId}
+                      className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between group shadow-xs"
+                    >
+                      <div>
+                        {/* Top Bar: Company & Status */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold text-sm">
+                              {job.company_name ? job.company_name.charAt(0).toUpperCase() : 'C'}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                <Building2 className="w-3.5 h-3.5" />
+                                {job.company_name || 'Enterprise Partner'}
+                              </h4>
+                              <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition mt-0.5">
+                                {job.title}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 capitalize">
+                            {jobTypeDisplay}
+                          </span>
+                        </div>
+
+                        {/* Location & Package Details */}
+                        <div className="flex flex-wrap items-center gap-3 py-2.5 border-y border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                          <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {job.location || 'Remote / Hybrid'}
+                          </span>
+                          {salaryDisplay && (
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                              <DollarSign className="w-3.5 h-3.5" />
+                              {salaryDisplay}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Description snippet */}
+                        <p className="mt-2.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-normal">
+                          {job.description || 'Join our high-growth engineering team to build enterprise grade distributed systems and AI solutions.'}
+                        </p>
+
+                        {/* Skills tags */}
+                        {job.required_skills && job.required_skills.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {job.required_skills.slice(0, 4).map((sk, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/50 dark:border-slate-700"
+                              >
+                                {sk}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Academic Criteria Badge */}
+                        <div className="mt-3.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                          <span className="flex items-center gap-1 font-medium">
+                            <GraduationCap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            Min CGPA: <strong className="text-slate-800 dark:text-slate-200">{minCgpa > 0 ? minCgpa : 'No Cutoff'}</strong>
+                          </span>
+                          <span>Max Backlogs: <strong className="text-slate-800 dark:text-slate-200">{maxBacklogs}</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Card Actions */}
+                      <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => handleExplainAiFit(job)}
+                          className="py-2 px-3 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800/80 transition flex items-center justify-center gap-1.5"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                          AI Fit
+                        </button>
+
+                        <button
+                          onClick={() => setAuditJob(job)}
+                          className="flex-1 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center justify-center gap-1.5"
+                        >
+                          <Award className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                          Audit
+                        </button>
+
+                        {hasApplied ? (
+                          <button
+                            onClick={() => setActiveTab('applied')}
+                            className="px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1 transition"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Applied
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setApplyingJob(job)}
+                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            Apply
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
       </div>

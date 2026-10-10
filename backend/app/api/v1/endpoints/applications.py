@@ -111,7 +111,14 @@ def list_my_applications(
     results = []
     for app in apps_cursor:
         job = db["jobs"].find_one({"_id": app.get("job_id")})
-        company = db["companies"].find_one({"_id": job.get("company_id")}) if job else None
+        company = db["companies"].find_one({"_id": job.get("company_id")}) if job and job.get("company_id") else None
+        
+        comp_name = (company.get("name") if company else None) or (job.get("company_name") if job else None)
+        comp_logo = (company.get("logo_url") if company else None) or (job.get("company_logo") if job else None)
+        salary_str = (job.get("package_details") if job and isinstance(job.get("package_details"), str) else None) or (job.get("salary_range") if job else None)
+        job_type_str = (job.get("employment_type") if job else None) or (job.get("job_type") if job else None)
+        min_cgpa_val = (job.get("min_cgpa") if job else None) or (job.get("eligibility_criteria", {}).get("min_cgpa") if job else None)
+
         results.append(
             ApplicationResponse(
                 id=str(app["_id"]),
@@ -119,7 +126,12 @@ def list_my_applications(
                 student_name=student_ctx["user"].get("name"),
                 job_id=str(app["job_id"]),
                 job_title=job.get("title") if job else None,
-                company_name=company.get("name") if company else None,
+                company_name=comp_name,
+                company_logo=comp_logo,
+                job_location=job.get("location") if job else None,
+                salary_range=salary_str,
+                job_type=job_type_str,
+                min_cgpa=min_cgpa_val,
                 resume_id=str(app["resume_id"]) if app.get("resume_id") else None,
                 applied_at=app.get("applied_at", datetime.now()),
                 status=app.get("status", "applied"),

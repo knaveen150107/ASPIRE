@@ -11,7 +11,12 @@ import {
   Zap, 
   BarChart3, 
   Check, 
-  X 
+  X,
+  Briefcase,
+  Building2,
+  MapPin,
+  DollarSign,
+  ArrowRight
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -147,6 +152,10 @@ export default function MockTestsPage() {
   const [testResult, setTestResult] = useState(null);
   const [isTestActive, setIsTestActive] = useState(false);
 
+  // Active Job Openings from Jobs section
+  const [jobDrives, setJobDrives] = useState([]);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+
   // Past test history
   const [pastTests, setPastTests] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -155,8 +164,8 @@ export default function MockTestsPage() {
   const [isAiGenModalOpen, setIsAiGenModalOpen] = useState(false);
   const [generatingAiTest, setGeneratingAiTest] = useState(false);
   const [aiGenForm, setAiGenForm] = useState({
-    companyName: 'Google',
-    roleTitle: 'Software Engineer',
+    companyName: 'Zoho',
+    roleTitle: 'Software Development Engineer',
     category: 'DSA & Problem Solving',
     difficulty: 'medium',
     numQuestions: 5,
@@ -164,7 +173,45 @@ export default function MockTestsPage() {
 
   useEffect(() => {
     loadTestHistory();
+    loadJobDrives();
   }, []);
+
+  const loadJobDrives = async () => {
+    try {
+      setLoadingJobs(true);
+      const res = await api.getJobs();
+      const list = res?.data || res || [];
+      setJobDrives(list);
+    } catch (err) {
+      // ignore
+    } finally {
+      setLoadingJobs(false);
+    }
+  };
+
+  const openAiGenForJob = (job) => {
+    const comp = job.company_name || 'Tech Company';
+    const title = job.title || 'Software Engineer';
+    const skills = job.required_skills || [];
+    
+    let suggestedCat = 'DSA & Problem Solving';
+    if (skills.some(s => String(s).toLowerCase().includes('design') || String(s).toLowerCase().includes('cloud') || String(s).toLowerCase().includes('system'))) {
+      suggestedCat = 'System Design & Cloud Architecture';
+    } else if (skills.some(s => String(s).toLowerCase().includes('sql') || String(s).toLowerCase().includes('database') || String(s).toLowerCase().includes('mongo'))) {
+      suggestedCat = 'Databases & SQL Mastery';
+    } else if (skills.some(s => String(s).toLowerCase().includes('ai') || String(s).toLowerCase().includes('ml') || String(s).toLowerCase().includes('python') || String(s).toLowerCase().includes('nlp'))) {
+      suggestedCat = 'AI, ML & Deep Learning';
+    }
+
+    setAiGenForm({
+      companyName: comp,
+      roleTitle: title,
+      category: suggestedCat,
+      difficulty: 'medium',
+      numQuestions: 5,
+    });
+    setIsAiGenModalOpen(true);
+  };
 
   // Timer Effect
   useEffect(() => {
@@ -597,35 +644,99 @@ export default function MockTestsPage() {
                   </div>
 
                   <form onSubmit={handleGenerateAiTest} className="space-y-3.5">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Company</label>
+                    {/* Fast Select from Live Placement Drives */}
+                    {jobDrives.length > 0 && (
+                      <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/80 space-y-1.5">
+                        <label className="block text-[11px] font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                          <Briefcase className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                          Choose from Active Campus Job Drives ({jobDrives.length} Open)
+                        </label>
                         <select
-                          value={aiGenForm.companyName}
-                          onChange={(e) => setAiGenForm({ ...aiGenForm, companyName: e.target.value })}
-                          className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                          onChange={(e) => {
+                            const selected = jobDrives.find((j) => (j.id || j._id) === e.target.value);
+                            if (selected) {
+                              const comp = selected.company_name || 'Tech Company';
+                              const title = selected.title || 'Software Engineer';
+                              const skills = selected.required_skills || [];
+                              
+                              let suggestedCat = 'DSA & Problem Solving';
+                              if (skills.some(s => String(s).toLowerCase().includes('design') || String(s).toLowerCase().includes('cloud') || String(s).toLowerCase().includes('system'))) {
+                                suggestedCat = 'System Design & Cloud Architecture';
+                              } else if (skills.some(s => String(s).toLowerCase().includes('sql') || String(s).toLowerCase().includes('database') || String(s).toLowerCase().includes('mongo'))) {
+                                suggestedCat = 'Databases & SQL Mastery';
+                              } else if (skills.some(s => String(s).toLowerCase().includes('ai') || String(s).toLowerCase().includes('ml') || String(s).toLowerCase().includes('python') || String(s).toLowerCase().includes('nlp'))) {
+                                suggestedCat = 'AI, ML & Deep Learning';
+                              }
+
+                              setAiGenForm({
+                                ...aiGenForm,
+                                companyName: comp,
+                                roleTitle: title,
+                                category: suggestedCat,
+                              });
+                            }
+                          }}
+                          defaultValue=""
+                          className="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="Google">Google</option>
-                          <option value="Amazon">Amazon</option>
-                          <option value="Microsoft">Microsoft</option>
-                          <option value="Meta">Meta</option>
-                          <option value="Apple">Apple</option>
-                          <option value="Netflix">Netflix</option>
-                          <option value="Uber">Uber</option>
-                          <option value="Goldman Sachs">Goldman Sachs</option>
+                          <option value="" disabled>-- Select a live company drive to auto-configure --</option>
+                          {jobDrives.map((j) => (
+                            <option key={j.id || j._id} value={j.id || j._id}>
+                              {j.company_name} — {j.title}
+                            </option>
+                          ))}
                         </select>
                       </div>
+                    )}
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Role</label>
-                        <input
-                          type="text"
-                          required
-                          value={aiGenForm.roleTitle}
-                          onChange={(e) => setAiGenForm({ ...aiGenForm, roleTitle: e.target.value })}
-                          className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
-                        />
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Company (Any Company / Startup)</label>
+                      <input
+                        type="text"
+                        required
+                        value={aiGenForm.companyName}
+                        onChange={(e) => setAiGenForm({ ...aiGenForm, companyName: e.target.value })}
+                        placeholder="e.g. Zoho, Swiggy, TCS, Razorpay, Startup, or custom company"
+                        className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {Array.from(new Set([
+                          ...jobDrives.map((j) => j.company_name).filter(Boolean),
+                          'Zoho', 'Swiggy', 'Razorpay', 'TCS', 'Infosys', 'Freshworks', 'Zerodha', 'Amazon', 'Google'
+                        ])).slice(0, 10).map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => {
+                              const match = jobDrives.find((j) => j.company_name === c);
+                              setAiGenForm({
+                                ...aiGenForm,
+                                companyName: c,
+                                roleTitle: match ? match.title : aiGenForm.roleTitle,
+                              });
+                            }}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition ${
+                              aiGenForm.companyName === c
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {c}
+                          </button>
+                        ))}
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Role</label>
+                      <input
+                        type="text"
+                        required
+                        value={aiGenForm.roleTitle}
+                        onChange={(e) => setAiGenForm({ ...aiGenForm, roleTitle: e.target.value })}
+                        placeholder="e.g. Full Stack Developer, SDE-1, Data Analyst"
+                        className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -652,7 +763,7 @@ export default function MockTestsPage() {
                           className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
                         >
                           <option value="easy">Easy (Entry Foundations)</option>
-                          <option value="medium">Medium (Standard Tier-1)</option>
+                          <option value="medium">Medium (Standard Hiring Bar)</option>
                           <option value="hard">Hard (Advanced Competitive)</option>
                         </select>
                       </div>
@@ -689,6 +800,78 @@ export default function MockTestsPage() {
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* Active Campus Drives Practice Section */}
+            {jobDrives.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      Mock Tests for Live Campus Drives ({jobDrives.length})
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Practice with AI-generated technical interview rounds tailored specifically to companies currently hiring on campus.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {jobDrives.slice(0, 8).map((job) => {
+                    const compName = job.company_name || 'Enterprise Partner';
+                    const salary = (typeof job.package_details === 'string' ? job.package_details : null) || job.salary_range || 'Competitive Package';
+                    return (
+                      <div
+                        key={job.id || job._id}
+                        className="card-3d p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600 transition flex flex-col justify-between shadow-xs group"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-extrabold text-xs flex items-center justify-center">
+                              {compName.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              Active Drive
+                            </span>
+                          </div>
+
+                          <div>
+                            <h4 className="font-semibold text-[11px] text-slate-500 dark:text-slate-400 truncate">{compName}</h4>
+                            <h3 className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate mt-0.5">
+                              {job.title}
+                            </h3>
+                          </div>
+
+                          {job.required_skills && job.required_skills.length > 0 && (
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {job.required_skills.slice(0, 2).map((sk, idx) => (
+                                <span key={idx} className="px-1.5 py-0.5 rounded text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                  {sk}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-3 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold truncate">
+                            {salary}
+                          </span>
+
+                          <button
+                            onClick={() => openAiGenForJob(job)}
+                            className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold shadow-xs transition flex items-center gap-1"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                            <span>Mock Test</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -292,29 +292,44 @@ export default function RoadmapsPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Company</label>
-                    <input
-                      type="text"
-                      value={genForm.targetCompany}
-                      onChange={(e) => setGenForm({ ...genForm, targetCompany: e.target.value })}
-                      placeholder="e.g. Google, Amazon, Microsoft"
-                      className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
-                    />
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Company (Any Company / Startup)</label>
+                  <input
+                    type="text"
+                    value={genForm.targetCompany}
+                    onChange={(e) => setGenForm({ ...genForm, targetCompany: e.target.value })}
+                    placeholder="e.g. Zoho, Swiggy, TCS, Razorpay, Startup, or any custom company"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-medium"
+                  />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {['Zoho', 'Swiggy', 'Razorpay', 'TCS', 'Infosys', 'Freshworks', 'Zerodha', 'Amazon', 'Google', 'Fintech Startup', 'Product Startup'].map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setGenForm({ ...genForm, targetCompany: c })}
+                        className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition ${
+                          genForm.targetCompany === c
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Duration</label>
-                    <select
-                      value={genForm.weeks}
-                      onChange={(e) => setGenForm({ ...genForm, weeks: Number(e.target.value) })}
-                      className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
-                    >
-                      <option value="4">4 Weeks (Intensive Sprint)</option>
-                      <option value="6">6 Weeks (Standard Track)</option>
-                      <option value="8">8 Weeks (Comprehensive)</option>
-                    </select>
-                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Duration</label>
+                  <select
+                    value={genForm.weeks}
+                    onChange={(e) => setGenForm({ ...genForm, weeks: Number(e.target.value) })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                  >
+                    <option value="4">4 Weeks (Intensive Sprint)</option>
+                    <option value="6">6 Weeks (Standard Track)</option>
+                    <option value="8">8 Weeks (Comprehensive)</option>
+                  </select>
                 </div>
 
                 <div>

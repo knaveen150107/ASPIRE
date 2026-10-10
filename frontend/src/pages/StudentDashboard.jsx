@@ -417,7 +417,10 @@ export default function StudentDashboard({ onNavigate }) {
             </p>
           </div>
 
-          <div className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2 transition-colors">
+          <div 
+            onClick={() => onNavigate && onNavigate('jobs')}
+            className="card-3d p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2 transition-colors cursor-pointer hover:border-purple-300 dark:hover:border-purple-700"
+          >
             <div className="flex items-center justify-between">
               <span className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Applications</span>
               <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-900 text-purple-600 dark:text-purple-400 flex items-center justify-center">
@@ -428,8 +431,9 @@ export default function StudentDashboard({ onNavigate }) {
               <span className="text-3xl font-extrabold text-slate-900 dark:text-white">{applications.length}</span>
               <span className="text-xs text-slate-400">submitted</span>
             </div>
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-              {applications.filter(a => a.status === 'shortlisted').length} shortlisted for rounds
+            <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold flex items-center justify-between">
+              <span>{applications.filter(a => a.status === 'shortlisted').length} shortlisted</span>
+              <span className="text-[10px] underline">View All →</span>
             </p>
           </div>
         </div>
@@ -744,6 +748,80 @@ export default function StudentDashboard({ onNavigate }) {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Job Applications Tracker */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    My Submitted Applications ({applications.length})
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Live recruitment and screening status for your active placement applications
+                  </p>
+                </div>
+                <button
+                  onClick={() => onNavigate('jobs')}
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs font-bold flex items-center gap-1 transition"
+                >
+                  View All In Jobs <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {applications.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                  <p className="text-slate-500 dark:text-slate-400 text-xs">No job applications submitted yet.</p>
+                  <button
+                    onClick={() => onNavigate('jobs')}
+                    className="mt-2 px-3.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-xs font-bold"
+                  >
+                    Browse Placement Drives
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {applications.slice(0, 4).map((app, idx) => {
+                    const statusLabel = app.status === 'offered' ? 'Offer Extended 🏆' :
+                                        app.status === 'shortlisted' ? 'Shortlisted' :
+                                        app.status === 'in_review' ? 'In Review' :
+                                        app.status === 'interview_scheduled' ? 'Interview Scheduled' :
+                                        app.status === 'assessment_scheduled' ? 'Assessment Scheduled' :
+                                        app.status === 'rejected' ? 'Application Closed' : 'Applied';
+                    const statusBg = app.status === 'offered' ? 'bg-emerald-500 text-white' :
+                                     app.status === 'shortlisted' ? 'bg-emerald-600 text-white' :
+                                     app.status === 'in_review' ? 'bg-amber-500 text-white' :
+                                     app.status === 'interview_scheduled' ? 'bg-blue-600 text-white' :
+                                     'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+
+                    const appliedDate = app.applied_at 
+                      ? new Date(app.applied_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+                      : 'Recently';
+
+                    return (
+                      <div key={app.id || app._id || idx} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-extrabold text-sm flex items-center justify-center">
+                            {(app.company_name || 'C').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-xs text-slate-900 dark:text-white">{app.job_title || 'Software Engineer'}</h4>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                              {app.company_name || 'Enterprise Recruiter'} • Applied {appliedDate}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${statusBg}`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

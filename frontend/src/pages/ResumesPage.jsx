@@ -4,7 +4,8 @@ import {
   Sparkles, 
   Plus, 
   Download, 
-  Cpu 
+  Cpu,
+  Trash2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +16,7 @@ export default function ResumesPage() {
   const toast = useToast();
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
 
   // Resume Creator Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -73,6 +75,28 @@ Projects: ${(resumeOrText.projects || []).join('\n')}
       // fallback
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteResume = async (resumeId, title) => {
+    if (!resumeId) return;
+    if (!window.confirm(`Are you sure you want to delete "${title || 'this resume'}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setDeletingId(resumeId);
+      await api.deleteResume(resumeId);
+      toast.success(`Resume "${title}" deleted successfully`);
+      setResumes((prev) => prev.filter((r) => (r._id || r.id) !== resumeId));
+      if (analyzingResume && (analyzingResume._id || analyzingResume.id) === resumeId) {
+        setAnalyzingResume(null);
+        setAtsAnalysisResult(null);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete resume record');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -226,20 +250,31 @@ Projects: ${(resumeOrText.projects || []).join('\n')}
                 </div>
 
                 <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setAnalyzingResume(resume);
+                        handleRunAiAnalysis(resume, resume.title);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800/80 transition flex items-center gap-1.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> AI ATS Audit
+                    </button>
+                    <button
+                      onClick={() => toast.success(`Exporting ${resume.title} to PDF!`)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Export PDF
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => {
-                      setAnalyzingResume(resume);
-                      handleRunAiAnalysis(resume, resume.title);
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800/80 transition flex items-center gap-1.5"
+                    onClick={() => handleDeleteResume(resume._id || resume.id, resume.title)}
+                    disabled={deletingId === (resume._id || resume.id)}
+                    className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-xs font-bold transition flex items-center justify-center disabled:opacity-40"
+                    title="Delete Resume Record"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> AI ATS Audit
-                  </button>
-                  <button
-                    onClick={() => toast.success(`Exporting ${resume.title} to PDF!`)}
-                    className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Export PDF
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -407,7 +442,24 @@ Projects: ${(resumeOrText.projects || []).join('\n')}
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  {analyzingResume ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const rId = analyzingResume._id || analyzingResume.id;
+                        const rTitle = analyzingResume.title;
+                        handleDeleteResume(rId, rTitle);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-xs font-bold transition flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete Resume Record
+                    </button>
+                  ) : (
+                    <div></div>
+                  )}
+
                   <button
                     onClick={() => {
                       setAnalyzingResume(null);

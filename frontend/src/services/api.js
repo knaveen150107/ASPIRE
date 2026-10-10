@@ -313,6 +313,13 @@ class ApiClient {
     return res.data || [];
   }
 
+  async deleteResume(resumeId) {
+    const res = await this.request(`/resumes/${resumeId}`, {
+      method: 'DELETE',
+    });
+    return res.data;
+  }
+
   async createResumeVersion(resumeId, versionData) {
     const res = await this.request(`/resumes/${resumeId}/versions`, {
       method: 'POST',

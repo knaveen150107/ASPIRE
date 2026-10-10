@@ -122,7 +122,7 @@ class GeminiAgentService:
         cgpa = student_context.get("cgpa", 8.2)
         skills = student_context.get("skills", ["Python", "Data Structures", "SQL"])
         role_target = target_role or "Software Engineer / AI Engineer"
-        comp_target = target_company or "Tier-1 Tech Companies (Google, Microsoft, Amazon)"
+        comp_target = target_company or "Tech Companies & Startups"
 
         system_instruction = (
             f"You are ASPIRE Career Copilot, an elite AI technical career mentor for engineering students. "
@@ -182,7 +182,7 @@ class GeminiAgentService:
     def generate_roadmap(
         self,
         target_role: str,
-        target_company: str = "Tier-1 Tech Companies",
+        target_company: str = "Target Tech Company / Startup",
         current_skills: Optional[List[str]] = None,
         missing_skills: Optional[List[str]] = None,
         target_weeks: int = 6,
@@ -273,16 +273,18 @@ class GeminiAgentService:
     # =========================================================================
     def generate_mock_questions(
         self,
-        company_name: str = "Google",
+        company_name: str = "Tech Company",
         role_title: str = "Software Engineer",
         category: str = "DSA",
         difficulty: str = "medium",
         num_questions: int = 5,
     ) -> Dict[str, Any]:
-        """Generates realistic company-tailored assessment questions with multiple choices."""
+        """Generates realistic company-tailored assessment questions with multiple choices for ANY company."""
         prompt = (
-            f"Generate {num_questions} high-quality interview multiple-choice questions matching the style of {company_name} "
-            f"for a '{role_title}' role in category '{category}' with difficulty '{difficulty}'.\n"
+            f"Generate {num_questions} high-quality interview multiple-choice questions matching the real hiring style and domain of '{company_name}' "
+            f"(which could be any company, startup, mid-market firm, IT services company, or product organization) "
+            f"for a '{role_title}' role in category '{category}' with difficulty '{difficulty}'. "
+            f"Tailor the questions, scenarios, and code snippets to match what '{company_name}' actually looks for. "
             f"Return a strict JSON object with this exact schema:\n"
             f"{{\n"
             f'  "title": "{company_name} {category} Mock Assessment",\n'

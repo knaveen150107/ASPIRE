@@ -163,3 +163,25 @@ def list_resume_versions(
             )
         )
     return ApiResponse(data=results)
+
+
+@router.delete("/{resume_id}", response_model=ApiResponse[bool])
+def delete_my_resume(
+    resume_id: str,
+    student_ctx: Dict[str, Any] = Depends(get_current_student),
+    db: Database = Depends(get_database),
+) -> Any:
+    """Permanently deletes a student's resume record and its associated versions."""
+    profile = student_ctx["profile"]
+    if not profile or not ObjectId.is_valid(resume_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid resume ID.")
+
+    res_oid = ObjectId(resume_id)
+    res = db["resumes"].delete_one({"_id": res_oid, "student_id": profile["_id"]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resume record not found.")
+
+    # Delete versions as well
+    db["resume_versions"].delete_many({"resume_id": res_oid})
+
+    return ApiResponse(message="Resume record successfully deleted.", data=True)

@@ -26,6 +26,11 @@ class ApplicationResponse(BaseModel):
     job_id: str
     job_title: Optional[str] = None
     company_name: Optional[str] = None
+    company_logo: Optional[str] = None
+    job_location: Optional[str] = None
+    salary_range: Optional[str] = None
+    job_type: Optional[str] = None
+    min_cgpa: Optional[float] = None
     resume_id: Optional[str] = None
     applied_at: datetime
     status: str
