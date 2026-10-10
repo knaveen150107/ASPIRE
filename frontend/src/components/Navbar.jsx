@@ -99,6 +99,7 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
               <div className="flex items-center space-x-2.5">
                 <button
                   onClick={() => triggerAuth('login')}
+                  aria-label="Sign in to your account"
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all active:scale-95"
                 >
                   Sign In
@@ -106,6 +107,7 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
 
                 <button
                   onClick={() => triggerAuth('register')}
+                  aria-label="Register a new account"
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all active:scale-95"
                 >
                   Register
