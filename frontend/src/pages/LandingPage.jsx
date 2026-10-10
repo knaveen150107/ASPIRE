@@ -47,18 +47,12 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
     <div className="bg-[#f8fafc] text-slate-800 selection:bg-blue-600 selection:text-white font-sans antialiased">
       
       {/* 1. HERO SECTION */}
-      <section className="relative pt-8 pb-20 overflow-hidden bg-gradient-to-b from-blue-50/60 via-white to-slate-50/50">
+      <section className="relative pt-12 sm:pt-16 pb-20 overflow-hidden bg-gradient-to-b from-blue-50/60 via-white to-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             {/* Left Content Column */}
             <div className="lg:col-span-6 space-y-6 text-left">
-              {/* Pill Tag */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-semibold shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                AI-Powered Career Intelligence Platform
-              </div>
-
               {/* Main Headline */}
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
                 Your Career.<br />
@@ -124,9 +118,9 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
             </div>
 
             {/* Right Dashboard Mockup Column */}
-            <div className="lg:col-span-6 relative">
+            <div className="lg:col-span-6 relative pt-6 sm:pt-8">
               {/* Handwritten note at top right */}
-              <div className="absolute -top-10 right-4 hidden sm:flex items-center gap-2 transform rotate-2 z-20 pointer-events-none">
+              <div className="absolute -top-3 right-4 hidden sm:flex items-center gap-2 transform rotate-2 z-10 pointer-events-none">
                 <span className="font-['Caveat'] text-2xl font-bold text-slate-600 tracking-wide">
                   From Learning To Earning
                 </span>

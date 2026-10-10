@@ -98,12 +98,6 @@ export const Navbar = ({ currentView, setCurrentView, onNavigate, openAuthModal,
 
           {/* User Controls & Status */}
           <div className="hidden md:flex items-center space-x-3">
-            {/* Live DB Indicator */}
-            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-500">
-              <span className={`w-2 h-2 rounded-full ${dbHealthy ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
-              <span>{dbHealthy ? 'Atlas Live' : 'Connecting'}</span>
-            </div>
-
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
                 <div 
