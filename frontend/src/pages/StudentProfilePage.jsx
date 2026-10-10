@@ -44,8 +44,8 @@ export default function StudentProfilePage({ onNavigate }) {
     try {
       setLoading(true);
       const [profileRes, skillsRes] = await Promise.all([
-        api.students.getProfile().catch(() => null),
-        api.students.getSkills().catch(() => []),
+        api.getStudentProfile().catch(() => null),
+        api.getStudentSkills().catch(() => []),
       ]);
 
       if (profileRes) {
@@ -149,7 +149,7 @@ export default function StudentProfilePage({ onNavigate }) {
         }
       };
 
-      const updated = await api.students.updateProfile(payload);
+      const updated = await api.updateStudentProfile(payload);
       toast.success('Academic profile & CGPA updated successfully!');
 
       if (refreshUser) {

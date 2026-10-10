@@ -471,3 +471,24 @@ class ApiClient {
 
 export const api = new ApiClient();
 
+// Backwards-compatible namespaces
+api.students = {
+  getProfile: () => api.getStudentProfile(),
+  updateProfile: (profileData) => api.updateStudentProfile(profileData),
+  getSkills: () => api.getStudentSkills(),
+  addSkill: (...args) => api.addStudentSkill(...args),
+  deleteSkill: (id) => api.deleteStudentSkill(id),
+};
+
+api.jobs = {
+  getAll: (params) => api.getJobs(params),
+  getById: (id) => api.getJob(id),
+  apply: (jobId, resumeId, notes) => api.applyJob(jobId, resumeId, notes),
+};
+
+api.auth = {
+  login: (email, password) => api.login(email, password),
+  register: (name, email, password, role) => api.register(name, email, password, role),
+  getMe: () => api.getMe(),
+};
+
