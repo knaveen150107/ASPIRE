@@ -15,7 +15,10 @@ import {
   FileText,
   Activity,
   User,
-  ShieldCheck
+  ShieldCheck,
+  ChevronRight,
+  X,
+  Sparkles
 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -57,15 +60,13 @@ export default function StudentDashboard({ onNavigate }) {
         api.getSkills(),
       ]);
 
-      if (profileData.status === 'fulfilled') {
+      if (profileData.status === 'fulfilled' && profileData.value) {
         setProfile(profileData.value);
-        if (profileData.value) {
-          setEditCgpa(profileData.value.academic_record?.cgpa || '');
-          setEditBacklogs(profileData.value.academic_record?.active_backlogs || 0);
-          setEditDegree(profileData.value.academic_record?.degree || 'B.Tech');
-          setEditDepartment(profileData.value.academic_record?.department || 'Computer Science');
-          setEditBatch(profileData.value.academic_record?.graduation_year || 2025);
-        }
+        setEditCgpa(profileData.value.cgpa ?? profileData.value.academic_record?.cgpa ?? 8.2);
+        setEditBacklogs(profileData.value.active_backlogs ?? profileData.value.academic_record?.active_backlogs ?? 0);
+        setEditDegree(profileData.value.degree || profileData.value.academic_record?.degree || 'B.Tech');
+        setEditDepartment(profileData.value.department || profileData.value.academic_record?.department || 'Computer Science');
+        setEditBatch(profileData.value.graduation_year || profileData.value.academic_record?.graduation_year || 2026);
       }
 
       if (skillsData.status === 'fulfilled') setSkills(skillsData.value || []);
@@ -147,11 +148,11 @@ export default function StudentDashboard({ onNavigate }) {
     );
   }
 
-  const cgpa = profile?.academic_record?.cgpa || 8.2;
-  const backlogs = profile?.academic_record?.active_backlogs ?? 0;
-  const degree = profile?.academic_record?.degree || 'B.Tech';
-  const department = profile?.academic_record?.department || 'Computer Science';
-  const batch = profile?.academic_record?.graduation_year || 2025;
+  const cgpa = profile?.cgpa ?? profile?.academic_record?.cgpa ?? 8.2;
+  const backlogs = profile?.active_backlogs ?? profile?.academic_record?.active_backlogs ?? 0;
+  const degree = profile?.degree || profile?.academic_record?.degree || 'B.Tech';
+  const department = profile?.department || profile?.academic_record?.department || 'Computer Science';
+  const batch = profile?.graduation_year || profile?.academic_record?.graduation_year || 2026;
 
   return (
     <div className="bg-[#f8fafc] min-h-screen py-8 text-slate-800 animate-fade-in">
@@ -192,10 +193,10 @@ export default function StudentDashboard({ onNavigate }) {
 
         {/* Top 4 Metrics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Cumulative GPA</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <GraduationCap className="w-4 h-4" />
               </div>
             </div>
@@ -209,10 +210,10 @@ export default function StudentDashboard({ onNavigate }) {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Standing Backlogs</span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <BookOpen className="w-4 h-4" />
               </div>
             </div>
@@ -226,10 +227,10 @@ export default function StudentDashboard({ onNavigate }) {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Verified Skills</span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                 <Award className="w-4 h-4" />
               </div>
             </div>
@@ -242,10 +243,10 @@ export default function StudentDashboard({ onNavigate }) {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+          <div className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Applications</span>
-              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                 <Activity className="w-4 h-4" />
               </div>
             </div>
