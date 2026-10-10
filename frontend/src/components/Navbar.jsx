@@ -26,7 +26,9 @@ import {
   BarChart3,
   Globe,
   Terminal,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Award,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -89,10 +91,13 @@ export const Navbar = ({ currentView, onNavigate, onOpenAuth }) => {
     { id: 'admin:overview', label: 'Overview', icon: BarChart3 },
     { id: 'admin:students', label: 'Students', icon: Users },
     { id: 'admin:recruiters', label: 'Recruiters', icon: Building2 },
-    { id: 'admin:jobs', label: 'Job Catalog', icon: Briefcase },
+    { id: 'admin:jobs', label: 'Jobs', icon: Briefcase },
     { id: 'admin:ai-agent', label: 'AI Agent', icon: Bot },
     { id: 'admin:rag-resume', label: 'RAG Engine', icon: Brain },
+    { id: 'admin:discovery', label: 'Discovery', icon: Globe },
     { id: 'admin:eligibility', label: 'Rules', icon: SlidersHorizontal },
+    { id: 'admin:assessments', label: 'Assessments', icon: Award },
+    { id: 'admin:notifications', label: 'Alerts', icon: Bell },
     { id: 'admin:security', label: 'Audit Trail', icon: ShieldCheck },
     { id: 'admin:settings', label: 'Settings', icon: Settings },
   ];

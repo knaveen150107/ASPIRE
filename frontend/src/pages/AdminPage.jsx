@@ -56,22 +56,6 @@ import {
 import { api } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
-// 12 Standard Admin Navigation Modules
-const ADMIN_MODULES = [
-  { id: 'overview', label: '1. Dashboard & Analytics', icon: BarChart3 },
-  { id: 'students', label: '2. Student Management', icon: Users },
-  { id: 'recruiters', label: '3. Recruiter & Company Hub', icon: Building2 },
-  { id: 'jobs', label: '4. Job Management', icon: Briefcase },
-  { id: 'ai-agent', label: '5. AI Agent Control Center', icon: Bot },
-  { id: 'rag-resume', label: '6. Resume & RAG Engine', icon: Brain },
-  { id: 'discovery', label: '7. Job Discovery & Feeds', icon: Globe },
-  { id: 'eligibility', label: '8. Eligibility & Matching Rules', icon: SlidersHorizontal },
-  { id: 'assessments', label: '9. Assessments & Roadmaps', icon: Award },
-  { id: 'notifications', label: '10. Alerts & Tracker', icon: Bell },
-  { id: 'security', label: '11. Security & Audit Trail', icon: ShieldCheck },
-  { id: 'settings', label: '12. System Settings & Exports', icon: Settings },
-];
-
 export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const [users, setUsers] = useState([]);
@@ -288,30 +272,6 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
                 <span>Sync Telemetry</span>
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* 12-Module Navigation Pills Toolbar */}
-        <div className="overflow-x-auto pb-2 scrollbar-thin">
-          <div className="flex items-center gap-2 min-w-max p-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
-            {ADMIN_MODULES.map((mod) => {
-              const Icon = mod.icon;
-              const active = activeTab === mod.id;
-              return (
-                <button
-                  key={mod.id}
-                  onClick={() => setActiveTab(mod.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
-                    active
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/25 scale-[1.02]'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{mod.label}</span>
-                </button>
-              );
-            })}
           </div>
         </div>
 
