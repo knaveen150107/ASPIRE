@@ -194,7 +194,7 @@ export default function RoadmapsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left: Summary & Progress Meter */}
-          <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-6">
+          <div className="card-3d p-8 rounded-3xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-6">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Curriculum Overview</span>
               <h3 className="text-lg font-bold text-slate-900 mt-1">{selectedRoadmap.title}</h3>
