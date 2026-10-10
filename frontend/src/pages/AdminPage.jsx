@@ -228,7 +228,7 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
   const totalStudents = users.filter((u) => u.role === 'student').length;
   const totalRecruiters = users.filter((u) => u.role === 'recruiter').length;
   const totalAdmins = users.filter((u) => u.role === 'admin').length;
-  const totalJobs = jobs.length || 32;
+  const totalJobs = jobs.length;
   const totalApplications = 148;
   const activeStudentsRate = 94;
 
@@ -290,12 +290,14 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-slate-900 dark:text-white">{totalStudents || 24}</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white">
+                    {loading ? '...' : totalStudents}
+                  </span>
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
-                    <TrendingUp className="w-3 h-3" /> +14% this mo
+                    <TrendingUp className="w-3 h-3" /> Live
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">94% active profiles complete</p>
+                <p className="text-[11px] text-slate-400">Registered student accounts</p>
               </div>
 
               <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
@@ -306,10 +308,12 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-slate-900 dark:text-white">{totalJobs}</span>
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">28 verified</span>
+                  <span className="text-2xl font-black text-slate-900 dark:text-white">
+                    {loading ? '...' : totalJobs}
+                  </span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Verified</span>
                 </div>
-                <p className="text-[11px] text-slate-400">4 new from scheduled crawl</p>
+                <p className="text-[11px] text-slate-400">Live recruitment opportunities</p>
               </div>
 
               <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-2">
@@ -1138,25 +1142,99 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
             </div>
 
             <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
-              <div className="overflow-x-auto max-h-96">
+              <div className="overflow-x-auto max-h-[500px]">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider sticky top-0">
                     <tr>
-                      <th className="py-3 px-4">Action</th>
-                      <th className="py-3 px-4">Entity</th>
-                      <th className="py-3 px-4">Actor Email</th>
+                      <th className="py-3 px-4">Event Type</th>
+                      <th className="py-3 px-4">User / Account</th>
+                      <th className="py-3 px-4">Activity & Details</th>
                       <th className="py-3 px-4">Timestamp</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
-                    {auditLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50">
-                        <td className="py-2.5 px-4 font-bold text-blue-600 dark:text-blue-400">{log.action}</td>
-                        <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">{log.entity_type}</td>
-                        <td className="py-2.5 px-4 text-slate-500">{log.user_email || 'System / Admin'}</td>
-                        <td className="py-2.5 px-4 text-slate-400">{new Date(log.created_at).toLocaleString()}</td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {auditLogs.map((log) => {
+                      const isLogin = log.action === 'USER_LOGIN';
+                      const isRegister = log.action === 'USER_REGISTER';
+                      const isBlock = log.action?.includes('BLOCK');
+                      const isDelete = log.action?.includes('DELETE');
+                      
+                      const actorName = log.user_name || (log.user_email ? log.user_email.split('@')[0] : 'User');
+                      const actorRole = log.user_role || (log.metadata?.role) || (log.metadata?.target_role);
+
+                      return (
+                        <tr key={log.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+                          {/* Event Type Badge */}
+                          <td className="py-3 px-4">
+                            {isLogin ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] border border-emerald-200 dark:border-emerald-800">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                User Login
+                              </span>
+                            ) : isRegister ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold text-[11px] border border-blue-200 dark:border-blue-800">
+                                Registration
+                              </span>
+                            ) : isBlock ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-[11px] border border-amber-200 dark:border-amber-800">
+                                {log.action === 'ADMIN_BLOCK_USER' ? 'Account Blocked' : 'Account Unblocked'}
+                              </span>
+                            ) : isDelete ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold text-[11px] border border-rose-200 dark:border-rose-800">
+                                User Deleted
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
+                                {log.action}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* User / Actor */}
+                          <td className="py-3 px-4">
+                            <div>
+                              <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                <span>{actorName}</span>
+                                {actorRole && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                    {actorRole}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                {log.user_email || log.user_id}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Event Details */}
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                            {isLogin ? (
+                              <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                                Successfully logged in with credentials
+                              </span>
+                            ) : isRegister ? (
+                              <span>Created new <strong>{actorRole || 'student'}</strong> account</span>
+                            ) : log.metadata?.target_email ? (
+                              <span>
+                                Updated status for <strong>{log.metadata.target_email}</strong> to <span className="font-bold text-slate-900 dark:text-white">{log.metadata.new_status}</span>
+                              </span>
+                            ) : log.metadata?.recruiter_name ? (
+                              <span>Provisioned recruiter <strong>{log.metadata.recruiter_name}</strong> ({log.metadata.company_name})</span>
+                            ) : log.metadata?.deleted_email ? (
+                              <span>Removed account <strong>{log.metadata.deleted_email}</strong></span>
+                            ) : (
+                              <span className="font-mono text-[11px] text-slate-400">{log.entity_type}</span>
+                            )}
+                          </td>
+
+                          {/* Timestamp */}
+                          <td className="py-3 px-4 text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                            {new Date(log.created_at).toLocaleString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

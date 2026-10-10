@@ -32,15 +32,22 @@ def list_audit_logs(
     results = []
     for log in cursor:
         user = db["users"].find_one({"_id": log.get("user_id")})
+        meta = log.get("metadata") or {}
+        user_email = (user.get("email") if user else None) or meta.get("email") or meta.get("target_email")
+        user_name = (user.get("name") if user else None) or meta.get("name") or meta.get("recruiter_name") or meta.get("deleted_name")
+        user_role = (user.get("role") if user else None) or meta.get("role") or meta.get("target_role")
+
         results.append(
             AuditLogResponse(
                 id=str(log["_id"]),
                 user_id=str(log["user_id"]),
-                user_email=user.get("email") if user else None,
+                user_email=user_email,
+                user_name=user_name,
+                user_role=user_role,
                 action=log["action"],
                 entity_type=log["entity_type"],
                 entity_id=str(log.get("entity_id")),
-                metadata=log.get("metadata"),
+                metadata=meta,
                 created_at=log.get("created_at", datetime.now()),
             )
         )

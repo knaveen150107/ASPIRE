@@ -52,6 +52,8 @@ class AuditLogResponse(BaseModel):
     id: str
     user_id: str
     user_email: Optional[str] = None
+    user_name: Optional[str] = None
+    user_role: Optional[str] = None
     action: str
     entity_type: str
     entity_id: str

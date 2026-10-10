@@ -79,7 +79,11 @@ def register_user(
         "action": "USER_REGISTER",
         "entity_type": "users",
         "entity_id": user_id,
-        "metadata": {"role": payload.role},
+        "metadata": {
+            "name": payload.name,
+            "email": payload.email.lower(),
+            "role": payload.role,
+        },
         "created_at": now,
     })
 
@@ -118,7 +122,11 @@ def login_user(
         "action": "USER_LOGIN",
         "entity_type": "users",
         "entity_id": user["_id"],
-        "metadata": {},
+        "metadata": {
+            "name": user.get("name"),
+            "email": user.get("email"),
+            "role": user.get("role", "student"),
+        },
         "created_at": datetime.now(),
     })
 
