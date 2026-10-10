@@ -48,6 +48,7 @@ ASPIRE uses standard **OAuth2 Bearer JWT tokens**:
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/users` | Admin | List all registered users with optional role filter. |
+| `POST` | `/api/v1/users/recruiters` | Admin | Provision and create verified recruiter accounts directly with company linkage. |
 | `PUT` | `/api/v1/users/{user_id}/status` | Admin | Activate or deactivate user accounts. |
 
 ---
