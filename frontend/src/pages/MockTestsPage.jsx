@@ -516,7 +516,7 @@ export default function MockTestsPage() {
               {SAMPLE_ASSESSMENTS.map((assessment) => (
                 <div
                   key={assessment.id}
-                  className="p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 hover:shadow-md transition flex flex-col justify-between group shadow-xs"
+                  className="card-3d p-6 rounded-3xl bg-white border border-slate-200/80 hover:border-blue-300 transition flex flex-col justify-between group shadow-xs"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
