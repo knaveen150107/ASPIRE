@@ -1,0 +1,13 @@
+-- Example only: use this pattern after checking an official recruitment notice.
+-- Do not set min_cgpa, degree_eligibility, graduation years, source_url, or verified_at
+-- unless those facts are verified for the specific role/recruitment cycle.
+--
+-- UPDATE company_roles
+-- SET min_cgpa = 7.00,
+--     degree_eligibility = JSON_ARRAY('Computer Engineering', 'Electronics'),
+--     min_graduation_year = 2027,
+--     max_graduation_year = 2027,
+--     source_url = 'https://official-company-source.example/job-id',
+--     verified_at = CURRENT_DATE
+-- WHERE company_name = 'Company Name'
+--   AND role_title = 'Role Name';

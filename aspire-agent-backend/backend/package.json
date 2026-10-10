@@ -1,0 +1,28 @@
+{
+  "name": "aspire-company-matching-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.0.0",
+    "@langchain/google-genai": "^2.0.0",
+    "@langchain/langgraph": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "mongodb": "^6.16.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
