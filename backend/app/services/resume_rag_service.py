@@ -470,16 +470,41 @@ class ResumeRAGService:
         if len(evidence) > 160:
             evidence = evidence[:157] + "..."
 
-        text_lower = text.lower()
-        expert_words = ["architect", "lead", "spearheaded", "principal", "production", "optimized", "scale"]
-        advanced_words = ["developed", "built", "engineered", "implemented", "deployed", "microservice", "full stack"]
-        beginner_words = ["familiar", "learning", "coursework", "fundamentals", "basic", "introductory"]
+        beginner_patterns = (
+            r"\bfamiliar\b",
+            r"\blearning\b",
+            r"\bcoursework\b",
+            r"\bfundamentals?\b",
+            r"\bbasic\b",
+            r"\bintroductory\b",
+            r"\bbeginner\b",
+            r"\bexposure to\b",
+        )
+        advanced_patterns = (
+            r"\barchitected\b",
+            r"\b(?:technical|tech) lead\b",
+            r"\b(?:principal|staff) engineer\b",
+            r"\b(?:led|owned|drove) (?:the )?(?:architecture|design|development|implementation|migration|technical direction) of\b",
+            r"\bmentored (?:a |the )?(?:team|engineers|developers)\b",
+        )
+        intermediate_patterns = (
+            r"\bdeveloped\b",
+            r"\bbuilt\b",
+            r"\bengineered\b",
+            r"\bimplemented\b",
+            r"\bdeployed\b",
+            r"\bmaintained\b",
+            r"\bintegrated\b",
+            r"\bcontributed\b",
+            r"\bdesigned\b",
+            r"\boptimized\b",
+        )
 
-        if any(w in text_lower for w in expert_words) or chunk.section == "experience":
-            return "advanced", evidence
-        elif any(w in text_lower for w in advanced_words) or chunk.section == "projects":
-            return "intermediate", evidence
-        elif any(w in text_lower for w in beginner_words):
+        if any(re.search(pattern, evidence, re.IGNORECASE) for pattern in beginner_patterns):
             return "beginner", evidence
+        elif any(re.search(pattern, evidence, re.IGNORECASE) for pattern in advanced_patterns):
+            return "advanced", evidence
+        elif any(re.search(pattern, evidence, re.IGNORECASE) for pattern in intermediate_patterns):
+            return "intermediate", evidence
         else:
             return "intermediate", evidence
