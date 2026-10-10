@@ -56,6 +56,25 @@ def get_current_student(
             detail="Access restricted to student accounts only.",
         )
     profile = db["student_profiles"].find_one({"user_id": current_user["_id"]})
+    if not profile:
+        from datetime import datetime
+        now = datetime.now()
+        new_profile = {
+            "user_id": current_user["_id"],
+            "register_number": "",
+            "department": "Computer Science",
+            "degree": "B.Tech",
+            "graduation_year": 2026,
+            "cgpa": 8.0,
+            "active_backlogs": 0,
+            "profile_summary": "Aspiring engineer",
+            "created_at": now,
+            "updated_at": now,
+        }
+        res = db["student_profiles"].insert_one(new_profile)
+        new_profile["_id"] = res.inserted_id
+        profile = new_profile
+
     return {"user": current_user, "profile": profile}
 
 
