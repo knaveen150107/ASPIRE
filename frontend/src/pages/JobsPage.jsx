@@ -54,16 +54,21 @@ export default function JobsPage({ onNavigate }) {
   const [applicationNotes, setApplicationNotes] = useState('');
   const [isSubmittingApp, setIsSubmittingApp] = useState(false);
 
+  // Student Profile & CGPA
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [onlyEligibleCgpa, setOnlyEligibleCgpa] = useState(true);
+
   // My submitted applications
   const [myAppliedJobIds, setMyAppliedJobIds] = useState(new Set());
 
   const fetchJobsAndUserData = async () => {
     try {
       setLoading(true);
-      const [jobsRes, appsRes, resumesRes] = await Promise.allSettled([
+      const [jobsRes, appsRes, resumesRes, profileRes] = await Promise.allSettled([
         api.getJobs(),
         user ? api.getMyApplications() : Promise.resolve([]),
         user ? api.getMyResumes() : Promise.resolve([]),
+        user ? api.getStudentProfile() : Promise.resolve(null),
       ]);
 
       if (jobsRes.status === 'fulfilled' && jobsRes.value) {
@@ -71,15 +76,19 @@ export default function JobsPage({ onNavigate }) {
       }
 
       if (appsRes.status === 'fulfilled' && appsRes.value) {
-        const ids = new Set((appsRes.value || []).map((a) => a.job_id));
+        const ids = new Set((appsRes.value || []).map((a) => a.job_id || a.id));
         setMyAppliedJobIds(ids);
       }
 
       if (resumesRes.status === 'fulfilled' && resumesRes.value) {
         setMyResumes(resumesRes.value || []);
         if (resumesRes.value && resumesRes.value.length > 0) {
-          setSelectedResumeId(resumesRes.value[0]._id);
+          setSelectedResumeId(resumesRes.value[0].id || resumesRes.value[0]._id);
         }
+      }
+
+      if (profileRes.status === 'fulfilled' && profileRes.value) {
+        setStudentProfile(profileRes.value);
       }
     } catch (err) {
       toast.error('Failed to load job listings');
@@ -92,15 +101,23 @@ export default function JobsPage({ onNavigate }) {
     fetchJobsAndUserData();
   }, [user]);
 
+  const studentCgpa = studentProfile?.cgpa ?? user?.cgpa ?? 8.75;
+
   const handleApply = async (e) => {
     e.preventDefault();
     if (!applyingJob) return;
 
+    const targetJobId = applyingJob.id || applyingJob._id;
+    if (!targetJobId) {
+      toast.error('Invalid job ID');
+      return;
+    }
+
     try {
       setIsSubmittingApp(true);
-      await api.applyJob(applyingJob._id, selectedResumeId || undefined, applicationNotes);
+      await api.applyJob(targetJobId, selectedResumeId || undefined, applicationNotes);
       toast.success(`Successfully applied to ${applyingJob.title} at ${applyingJob.company_name || 'Company'}!`);
-      setMyAppliedJobIds((prev) => new Set([...prev, applyingJob._id]));
+      setMyAppliedJobIds((prev) => new Set([...prev, targetJobId]));
       setApplyingJob(null);
       setApplicationNotes('');
     } catch (err) {
@@ -135,7 +152,10 @@ export default function JobsPage({ onNavigate }) {
       degrees.length === 0 ||
       degrees.some(d => d.toLowerCase() === selectedDegree.toLowerCase());
 
-    return matchesSearch && matchesDept && matchesDegree;
+    const minJobCgpa = job.min_cgpa ?? job.eligibility_criteria?.min_cgpa ?? 0;
+    const matchesCgpa = !onlyEligibleCgpa || minJobCgpa <= studentCgpa;
+
+    return matchesSearch && matchesDept && matchesDegree && matchesCgpa;
   });
 
   return (
@@ -209,6 +229,30 @@ export default function JobsPage({ onNavigate }) {
                 <option value="M.Tech">M.Tech</option>
                 <option value="MCA">MCA</option>
               </select>
+            </div>
+          </div>
+
+          {/* CGPA Eligibility Quick Filter */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-500 dark:text-slate-400">Your Verified Academic CGPA:</span>
+              <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-extrabold text-xs">
+                {studentCgpa}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setOnlyEligibleCgpa(!onlyEligibleCgpa)}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 ${
+                  onlyEligibleCgpa
+                    ? 'bg-emerald-500 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {onlyEligibleCgpa ? '✓ Showing Drives for My CGPA (Cutoff ≤ ' + studentCgpa + ')' : 'Showing All Cutoffs'}
+              </button>
             </div>
           </div>
         </div>
