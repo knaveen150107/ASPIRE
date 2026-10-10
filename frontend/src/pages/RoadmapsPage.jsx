@@ -97,6 +97,15 @@ export default function RoadmapsPage() {
   const [selectedRoadmap, setSelectedRoadmap] = useState(DEFAULT_ROADMAPS[0]);
   const [loading, setLoading] = useState(false);
 
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
+  const [genForm, setGenForm] = useState({
+    targetRole: 'AI / Machine Learning Engineer',
+    targetCompany: 'Google',
+    weeks: 6,
+    missingSkills: 'System Design, Vector Databases, Docker, PyTorch'
+  });
+
   useEffect(() => {
     loadUserRoadmaps();
   }, [user]);
@@ -113,6 +122,54 @@ export default function RoadmapsPage() {
       // fallback
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateAiRoadmap = async (e) => {
+    e.preventDefault();
+    if (!genForm.targetRole.trim()) return;
+    setGeneratingRoadmap(true);
+
+    try {
+      const skillsArray = genForm.missingSkills
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const aiRes = await api.generateAiRoadmap(
+        genForm.targetRole,
+        genForm.targetCompany,
+        skillsArray,
+        Number(genForm.weeks) || 6
+      );
+
+      // Convert AI modules into roadmap format
+      const formattedSteps = (aiRes.modules || []).map((m, idx) => ({
+        id: `gen_step_${idx + 1}`,
+        title: m.title || `Week ${m.week_number}`,
+        description: (m.topics || []).map((t) => `${t.name}: ${t.description}`).join(' • ') || (m.milestone_project || 'Master core concepts'),
+        resource_url: m.topics?.[0]?.resource_links?.[0]?.url || 'https://roadmap.sh',
+        resource_label: m.topics?.[0]?.resource_links?.[0]?.title || 'Curated Documentation',
+        completed: false,
+      }));
+
+      const newRoadmap = {
+        id: `ai_rm_${Date.now()}`,
+        title: `${aiRes.role_title} (${aiRes.target_company})`,
+        category: 'AI Tailored Curriculum',
+        duration_weeks: aiRes.estimated_duration_weeks || 6,
+        description: aiRes.summary,
+        steps: formattedSteps,
+      };
+
+      setRoadmaps((prev) => [newRoadmap, ...prev]);
+      setSelectedRoadmap(newRoadmap);
+      setIsGenerateModalOpen(false);
+      toast.success(`AI Roadmap for "${genForm.targetRole}" generated successfully!`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to generate AI roadmap');
+    } finally {
+      setGeneratingRoadmap(false);
     }
   };
 
@@ -138,8 +195,8 @@ export default function RoadmapsPage() {
     toast.success('Roadmap milestone progress saved!');
   };
 
-  const completedStepsCount = selectedRoadmap.steps.filter((s) => s.completed).length;
-  const totalStepsCount = selectedRoadmap.steps.length;
+  const completedStepsCount = (selectedRoadmap?.steps || []).filter((s) => s.completed).length;
+  const totalStepsCount = selectedRoadmap?.steps?.length || 1;
   const progressPercentage = Math.round((completedStepsCount / totalStepsCount) * 100);
 
   return (
@@ -162,16 +219,26 @@ export default function RoadmapsPage() {
               </p>
             </div>
 
-            <div className="px-4 py-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
-              <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{roadmaps.length}</div>
-              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Enrolled Paths</div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsGenerateModalOpen(true)}
+                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-blue-600/25 flex items-center gap-2 transition transform active:scale-95"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>AI Custom Roadmap</span>
+              </button>
+
+              <div className="px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
+                <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{roadmaps.length}</div>
+                <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Enrolled Paths</div>
+              </div>
             </div>
           </div>
 
           {/* Roadmap Selector Tabs */}
           <div className="flex flex-wrap gap-2 pt-2">
             {roadmaps.map((rm) => {
-              const isSelected = (rm.id || rm._id) === (selectedRoadmap.id || selectedRoadmap._id);
+              const isSelected = (rm.id || rm._id) === (selectedRoadmap?.id || selectedRoadmap?._id);
               return (
                 <button
                   key={rm.id || rm._id}
@@ -189,6 +256,99 @@ export default function RoadmapsPage() {
             })}
           </div>
         </div>
+
+        {/* Modal: AI Roadmap Generator */}
+        {isGenerateModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+            <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">AI Custom Roadmap Generator</h3>
+                    <p className="text-[11px] text-slate-400">Powered by Gemini Multi-Agent Curriculum Engine</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsGenerateModalOpen(false)}
+                  className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleGenerateAiRoadmap} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Job Role</label>
+                  <input
+                    type="text"
+                    required
+                    value={genForm.targetRole}
+                    onChange={(e) => setGenForm({ ...genForm, targetRole: e.target.value })}
+                    placeholder="e.g. AI / ML Engineer, Full Stack Architect, Quant Trader"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Company</label>
+                    <input
+                      type="text"
+                      value={genForm.targetCompany}
+                      onChange={(e) => setGenForm({ ...genForm, targetCompany: e.target.value })}
+                      placeholder="e.g. Google, Amazon, Microsoft"
+                      className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Duration</label>
+                    <select
+                      value={genForm.weeks}
+                      onChange={(e) => setGenForm({ ...genForm, weeks: Number(e.target.value) })}
+                      className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                    >
+                      <option value="4">4 Weeks (Intensive Sprint)</option>
+                      <option value="6">6 Weeks (Standard Track)</option>
+                      <option value="8">8 Weeks (Comprehensive)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Skills to Focus On (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={genForm.missingSkills}
+                    onChange={(e) => setGenForm({ ...genForm, missingSkills: e.target.value })}
+                    placeholder="e.g. Docker, PyTorch, System Design, Graph Algorithms"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsGenerateModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={generatingRoadmap}
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-blue-600/30 flex items-center gap-1.5"
+                  >
+                    <Sparkles className={`w-3.5 h-3.5 ${generatingRoadmap ? 'animate-spin' : ''}`} />
+                    <span>{generatingRoadmap ? 'Synthesizing Curriculum...' : 'Generate AI Roadmap'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Roadmap Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

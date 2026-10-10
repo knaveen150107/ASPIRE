@@ -5,6 +5,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import ProtectedView from './components/ProtectedView';
+import { AiCopilotWidget } from './components/AiCopilotWidget';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -155,6 +156,9 @@ function MainApp() {
       <main className="flex-1">
         {renderCurrentView()}
       </main>
+
+      {/* Interactive AI Career Copilot Widget */}
+      <AiCopilotWidget onNavigate={handleNavigate} />
 
       {/* Global Auth Modal */}
       {isAuthModalOpen && (

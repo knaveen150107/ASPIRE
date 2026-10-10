@@ -370,6 +370,99 @@ class ApiClient {
     return res.data || [];
   }
 
+  // --- Google Gemini AI Agent Endpoints ---
+  async getAiStatus() {
+    const res = await this.request('/ai/status');
+    return res.data;
+  }
+
+  async chatWithAi(message, history = [], targetRole = null, targetCompany = null) {
+    const res = await this.request('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        history,
+        target_role: targetRole,
+        target_company: targetCompany,
+      }),
+    });
+    return res.data;
+  }
+
+  async generateAiRoadmap(targetRole, targetCompany = 'Tier-1 Tech', missingSkills = [], targetWeeks = 6) {
+    const res = await this.request('/ai/generate-roadmap', {
+      method: 'POST',
+      body: JSON.stringify({
+        target_role: targetRole,
+        target_company: targetCompany,
+        missing_skills: missingSkills,
+        target_weeks: targetWeeks,
+      }),
+    });
+    return res.data;
+  }
+
+  async generateAiMockTest(companyName, roleTitle, category = 'DSA', difficulty = 'medium', numQuestions = 5) {
+    const res = await this.request('/ai/generate-mock-test', {
+      method: 'POST',
+      body: JSON.stringify({
+        company_name: companyName,
+        role_title: roleTitle,
+        category,
+        difficulty,
+        num_questions: numQuestions,
+      }),
+    });
+    return res.data;
+  }
+
+  async evaluateAiMockTest(submissions, companyName, roleTitle) {
+    const res = await this.request('/ai/evaluate-mock-test', {
+      method: 'POST',
+      body: JSON.stringify({
+        submissions,
+        company_name: companyName,
+        role_title: roleTitle,
+      }),
+    });
+    return res.data;
+  }
+
+  async analyzeResumeAi(resumeText = null, targetRole = 'Software Engineer') {
+    const res = await this.request('/ai/analyze-resume', {
+      method: 'POST',
+      body: JSON.stringify({
+        resume_text: resumeText,
+        target_role: targetRole,
+      }),
+    });
+    return res.data;
+  }
+
+  async explainJobFitAi(jobId) {
+    const res = await this.request('/ai/explain-job-fit', {
+      method: 'POST',
+      body: JSON.stringify({ job_id: jobId }),
+    });
+    return res.data;
+  }
+
+  async updateGeminiApiKey(geminiApiKey) {
+    const res = await this.request('/ai/admin/update-key', {
+      method: 'POST',
+      body: JSON.stringify({ gemini_api_key: geminiApiKey }),
+    });
+    return res;
+  }
+
+  async triggerAutonomousAiCycle(dryRun = false) {
+    const res = await this.request('/ai/admin/run-cycle', {
+      method: 'POST',
+      body: JSON.stringify({ dry_run: dryRun }),
+    });
+    return res.data;
+  }
+
   async checkHealth() {
     const res = await fetch('/health');
     return await res.json();
@@ -377,3 +470,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
+

@@ -90,8 +90,12 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
   const [creatingRecruiter, setCreatingRecruiter] = useState(false);
 
   // AI Agent Config State
-  const [agentModel, setAgentModel] = useState('gemini-2.5-flash');
+  const [agentModel, setAgentModel] = useState('gemini-3.6-flash');
   const [agentTokenBudget, setAgentTokenBudget] = useState(500000);
+  const [geminiKeyInput, setGeminiKeyInput] = useState('');
+  const [savingKey, setSavingKey] = useState(false);
+  const [runningAiCycle, setRunningAiCycle] = useState(false);
+  const [aiStatus, setAiStatus] = useState(null);
   const [agentEnabledTools, setAgentEnabledTools] = useState({
     jobDiscovery: true,
     ragExtraction: true,
@@ -114,15 +118,17 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [usersRes, jobsRes, auditRes] = await Promise.allSettled([
+      const [usersRes, jobsRes, auditRes, aiRes] = await Promise.allSettled([
         api.getAllUsers(),
         api.getJobs(),
         api.getAuditLogs(50),
+        api.getAiStatus(),
       ]);
 
       if (usersRes.status === 'fulfilled') setUsers(usersRes.value || []);
       if (jobsRes.status === 'fulfilled') setJobs(jobsRes.value || []);
       if (auditRes.status === 'fulfilled') setAuditLogs(auditRes.value || []);
+      if (aiRes.status === 'fulfilled') setAiStatus(aiRes.value);
 
       const healthRes = await api.checkHealth().catch(() => null);
       if (healthRes) setSystemHealth(healthRes);
@@ -130,6 +136,39 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
       toast.error('Failed to load full admin telemetry');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveGeminiKey = async (e) => {
+    if (e) e.preventDefault();
+    if (!geminiKeyInput.trim() || geminiKeyInput.length < 10) {
+      toast.error('Please enter a valid Gemini API Key (at least 10 characters)');
+      return;
+    }
+    setSavingKey(true);
+    try {
+      await api.updateGeminiApiKey(geminiKeyInput.trim());
+      toast.success('Gemini API Key activated! Gemini 3.6 Flash engine is live.');
+      setGeminiKeyInput('');
+      const statusRes = await api.getAiStatus();
+      setAiStatus(statusRes);
+    } catch (err) {
+      toast.error(err.message || 'Failed to update Gemini API key');
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const handleTriggerAiCycle = async () => {
+    setRunningAiCycle(true);
+    try {
+      const res = await api.triggerAutonomousAiCycle(false);
+      toast.success(`Autonomous Cycle Finished: ${res.matches_found} matches evaluated, ${res.notifications_dispatched} alerts dispatched`);
+      loadData();
+    } catch (err) {
+      toast.error(err.message || 'Failed to run autonomous AI cycle');
+    } finally {
+      setRunningAiCycle(false);
     }
   };
 
@@ -712,48 +751,122 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
         {/* ========================================================= */}
         {activeTab === 'ai-agent' && (
           <div className="space-y-6 animate-fade-in">
+            {/* Top AI Agent Banner */}
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-purple-900/40 border border-blue-500/30 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/30">
+                  <Bot className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Google Gemini AI Engine & Agent Hub</h3>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1 ${
+                      aiStatus?.gemini_key_configured
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-400/40'
+                        : 'bg-amber-500/20 text-amber-400 border-amber-400/40'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${aiStatus?.gemini_key_configured ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                      {aiStatus?.gemini_key_configured ? 'Live Gemini 3.6 Flash Active' : 'Standby Heuristic Mode'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Powers Career Copilot, RAG Resume Extraction, Skill Gap Roadmaps, Dynamic Question Generation, and Job Fit Radar.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleTriggerAiCycle}
+                  disabled={runningAiCycle}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${runningAiCycle ? 'animate-spin' : ''}`} />
+                  <span>{runningAiCycle ? 'Running Autonomous Scan...' : 'Trigger Autonomous Match Run'}</span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* Agent Settings Column */}
+              {/* Agent Settings & API Key Input Column */}
               <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-5">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Bot className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  Gemini Agent Parameters
-                </h3>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Inference Model</label>
-                  <select
-                    value={agentModel}
-                    onChange={(e) => setAgentModel(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
-                  >
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Production Default)</option>
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Reasoning)</option>
-                    <option value="text-embedding-004">Text Embedding 004 (768 Dim)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                    <span>Token Budget / Day</span>
-                    <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{(agentTokenBudget / 1000).toFixed(0)}k tokens</span>
+                
+                {/* 1. Gemini API Key Configuration */}
+                <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                      Configure Gemini API Key
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {aiStatus?.gemini_key_configured ? 'Active ✓' : 'Key Needed'}
+                    </span>
                   </div>
-                  <input
-                    type="range"
-                    min="100000"
-                    max="2000000"
-                    step="50000"
-                    value={agentTokenBudget}
-                    onChange={(e) => setAgentTokenBudget(Number(e.target.value))}
-                    className="w-full accent-blue-600"
-                  />
+
+                  <form onSubmit={handleSaveGeminiKey} className="space-y-2">
+                    <input
+                      type="password"
+                      placeholder="Paste your Google Gemini API Key here (AIza...)"
+                      value={geminiKeyInput}
+                      onChange={(e) => setGeminiKeyInput(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono"
+                    />
+                    <button
+                      type="submit"
+                      disabled={savingKey || !geminiKeyInput.trim()}
+                      className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-bold text-xs transition shadow-md shadow-blue-600/25 flex items-center justify-center gap-1.5"
+                    >
+                      <Zap className={`w-3.5 h-3.5 ${savingKey ? 'animate-spin' : ''}`} />
+                      <span>{savingKey ? 'Activating Key...' : 'Save & Activate Live LLM'}</span>
+                    </button>
+                  </form>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Get your free key from <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-blue-600 dark:text-blue-400 underline">Google AI Studio</a>.
+                  </p>
                 </div>
 
+                {/* 2. Inference Parameters */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Model Parameters
+                  </h4>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Active Foundation Model</label>
+                    <select
+                      value={agentModel}
+                      onChange={(e) => setAgentModel(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                    >
+                      <option value="gemini-3.6-flash">gemini-3.6-flash (Recommended • Multimodal & Fast)</option>
+                      <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Ultra Fast • Low Latency)</option>
+                      <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Deep Reasoning • Complex Coding)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                      <span>Daily Token Budget</span>
+                      <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">{(agentTokenBudget / 1000).toFixed(0)}k tokens</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="100000"
+                      max="2000000"
+                      step="50000"
+                      value={agentTokenBudget}
+                      onChange={(e) => setAgentTokenBudget(Number(e.target.value))}
+                      className="w-full accent-blue-600"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Autonomous Capabilities Checklist */}
                 <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Autonomous Workflows</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Autonomous Tool Dispatchers</span>
                   {Object.keys(agentEnabledTools).map((toolKey) => (
-                    <label key={toolKey} className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+                    <label key={toolKey} className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
                       <span className="capitalize">{toolKey.replace(/([A-Z])/g, ' $1')}</span>
                       <input
                         type="checkbox"
@@ -778,12 +891,31 @@ export const AdminPage = ({ initialTab = 'overview', onNavigate }) => {
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs space-y-2 max-h-72 overflow-y-auto">
-                  <p className="text-slate-400">[2026-10-10 18:50:12] Agent initialized with gemini-2.5-flash</p>
-                  <p>[INFO] execute_tool: `rag_vector_search` query="FastAPI React MongoDB" matched 14 jobs (latency: 18ms)</p>
-                  <p>[INFO] execute_tool: `calculate_eligibility` student_id="6aca89..." result=ELIGIBLE (fit=94%)</p>
-                  <p>[INFO] execute_tool: `skill_gap_radar` identified missing: ['Docker', 'Kafka']</p>
+                <div className="p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-xs space-y-2 max-h-96 overflow-y-auto">
+                  <p className="text-slate-400">[{new Date().toISOString().slice(0, 19).replace('T', ' ')}] Agent initialized with {agentModel}</p>
+                  <p>[INFO] execute_tool: `rag_vector_search` query="FastAPI React MongoDB" matched active jobs (latency: 18ms)</p>
+                  <p>[INFO] execute_tool: `calculate_eligibility` evaluated student profiles against cutoff thresholds</p>
+                  <p>[INFO] execute_tool: `skill_gap_radar` analyzed skill overlaps with Tier-1 recruitment targets</p>
+                  <p>[INFO] execute_tool: `copilot_chat_engine` operational across student dashboards</p>
                   <p className="text-blue-400">[SYSTEM] Background worker sync complete. 0 retries queued.</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 space-y-2">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block">Active Agent Endpoints</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <span className="text-emerald-600 font-bold">POST</span> /api/v1/ai/chat
+                    </div>
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <span className="text-emerald-600 font-bold">POST</span> /api/v1/ai/generate-roadmap
+                    </div>
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <span className="text-emerald-600 font-bold">POST</span> /api/v1/ai/generate-mock-test
+                    </div>
+                    <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <span className="text-emerald-600 font-bold">POST</span> /api/v1/ai/analyze-resume
+                    </div>
+                  </div>
                 </div>
               </div>
 

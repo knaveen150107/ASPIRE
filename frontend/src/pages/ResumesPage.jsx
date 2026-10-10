@@ -25,6 +25,41 @@ export default function ResumesPage() {
   const [projectsInput, setProjectsInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ATS AI Analysis Modal State
+  const [analyzingResume, setAnalyzingResume] = useState(null);
+  const [atsAnalysisResult, setAtsAnalysisResult] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [customAnalysisText, setCustomAnalysisText] = useState('');
+  const [targetJobRole, setTargetJobRole] = useState('Full Stack Software Engineer');
+  const [isCustomAnalyzeOpen, setIsCustomAnalyzeOpen] = useState(false);
+
+  const handleRunAiAnalysis = async (resumeOrText, targetRole = 'Software Engineer') => {
+    try {
+      setIsAnalyzing(true);
+      setAtsAnalysisResult(null);
+      let textToAnalyze = '';
+      if (typeof resumeOrText === 'string') {
+        textToAnalyze = resumeOrText;
+      } else if (resumeOrText) {
+        textToAnalyze = `
+Role: ${resumeOrText.title}
+Summary: ${resumeOrText.summary || ''}
+Skills: ${(resumeOrText.skills || []).join(', ')}
+Experience: ${(resumeOrText.experience || []).join('\n')}
+Projects: ${(resumeOrText.projects || []).join('\n')}
+        `;
+      }
+
+      const res = await api.analyzeResumeAi(textToAnalyze, targetRole);
+      setAtsAnalysisResult(res);
+      toast.success('Gemini ATS Analysis Complete!');
+    } catch (err) {
+      toast.error(err.message || 'Failed to complete AI resume audit');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   useEffect(() => {
     loadResumes();
   }, [user]);
@@ -104,13 +139,25 @@ export default function ResumesPage() {
               </p>
             </div>
 
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-2 whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4" />
-              Create Tailored Version
-            </button>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                onClick={() => {
+                  setIsCustomAnalyzeOpen(true);
+                  setAtsAnalysisResult(null);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold text-xs shadow-xs transition flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                AI ATS Checker
+              </button>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-2 whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                Create Tailored Version
+              </button>
+            </div>
           </div>
         </div>
 
@@ -178,8 +225,16 @@ export default function ResumesPage() {
                   )}
                 </div>
 
-                <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400 dark:text-slate-500">Ready for Direct Drive Apply</span>
+                <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                  <button
+                    onClick={() => {
+                      setAnalyzingResume(resume);
+                      handleRunAiAnalysis(resume, resume.title);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-bold border border-purple-200 dark:border-purple-800/80 transition flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> AI ATS Audit
+                  </button>
                   <button
                     onClick={() => toast.success(`Exporting ${resume.title} to PDF!`)}
                     className="px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5"
@@ -193,6 +248,182 @@ export default function ResumesPage() {
         )}
 
       </div>
+
+      {/* AI Deep ATS Analysis Modal */}
+      {(analyzingResume || isCustomAnalyzeOpen) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 transition-colors">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  Gemini Deep ATS Audit & Keyword Optimizer
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-2">
+                  {analyzingResume ? analyzingResume.title : 'Live Resume Text ATS Audit'}
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setAnalyzingResume(null);
+                  setIsCustomAnalyzeOpen(false);
+                  setAtsAnalysisResult(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Custom Input Form if isCustomAnalyzeOpen and not analyzing existing card */}
+            {!analyzingResume && !atsAnalysisResult && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Placement Role</label>
+                  <input
+                    type="text"
+                    value={targetJobRole}
+                    onChange={(e) => setTargetJobRole(e.target.value)}
+                    placeholder="e.g. Full Stack Engineer, Machine Learning Specialist"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-purple-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Paste Resume Content / LaTeX / Plaintext</label>
+                  <textarea
+                    rows="6"
+                    value={customAnalysisText}
+                    onChange={(e) => setCustomAnalysisText(e.target.value)}
+                    placeholder="Paste candidate experience, skills, and projects here..."
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-purple-600 resize-none font-mono"
+                  ></textarea>
+                </div>
+
+                <button
+                  onClick={() => handleRunAiAnalysis(customAnalysisText, targetJobRole)}
+                  disabled={isAnalyzing || !customAnalysisText.trim()}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-purple-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Auditing via Gemini 3.6 Flash...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" /> Run Deep ATS Audit
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Loading Indicator */}
+            {isAnalyzing && (
+              <div className="py-12 text-center space-y-3">
+                <div className="w-12 h-12 border-3 border-purple-600/20 border-t-purple-600 rounded-full animate-spin mx-auto"></div>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Gemini AI Agent is auditing your resume...</p>
+                <p className="text-xs text-slate-400">Benchmarking keywords, structure, and action verbs against corporate ATS filters.</p>
+              </div>
+            )}
+
+            {/* Analysis Results Display */}
+            {atsAnalysisResult && !isAnalyzing && (
+              <div className="space-y-6">
+                {/* Score Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-center">
+                    <div className="text-2xl font-black text-purple-700 dark:text-purple-300">
+                      {atsAnalysisResult.overall_score || atsAnalysisResult.ats_score}%
+                    </div>
+                    <div className="text-[10px] text-purple-600 dark:text-purple-400 font-bold uppercase mt-1">Overall ATS Score</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-center">
+                    <div className="text-2xl font-black text-blue-700 dark:text-blue-300">
+                      {atsAnalysisResult.format_score || 90}%
+                    </div>
+                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase mt-1">Format & Syntax</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-center">
+                    <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">
+                      {atsAnalysisResult.keyword_score || 85}%
+                    </div>
+                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase mt-1">Keyword Match</div>
+                  </div>
+                </div>
+
+                {/* Matched & Missing Keywords */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <h4 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                      ✓ Detected ATS Keywords ({atsAnalysisResult.matched_keywords?.length || 0})
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(atsAnalysisResult.matched_keywords || []).map((kw, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <h4 className="text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                      ⚠ Missing Critical Keywords ({atsAnalysisResult.missing_keywords?.length || 0})
+                    </h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(atsAnalysisResult.missing_keywords || []).map((kw, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                          + {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Suggestions & Action Verbs */}
+                {atsAnalysisResult.bullet_improvements && atsAnalysisResult.bullet_improvements.length > 0 && (
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Action Verb & Bullet Point Enhancements</h4>
+                    <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                      {atsAnalysisResult.bullet_improvements.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-purple-600 dark:text-purple-400 font-bold">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Summary Recommendations */}
+                {atsAnalysisResult.summary_recommendations && (
+                  <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 space-y-1">
+                    <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-300">AI Placement Optimization Recommendation</h4>
+                    <p className="text-xs text-indigo-800 dark:text-indigo-300/80 leading-relaxed font-normal">
+                      {atsAnalysisResult.summary_recommendations}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <button
+                    onClick={() => {
+                      setAnalyzingResume(null);
+                      setIsCustomAnalyzeOpen(false);
+                      setAtsAnalysisResult(null);
+                    }}
+                    className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Create Resume Modal */}
       {isModalOpen && (

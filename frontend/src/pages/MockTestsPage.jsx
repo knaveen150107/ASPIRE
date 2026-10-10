@@ -151,6 +151,17 @@ export default function MockTestsPage() {
   const [pastTests, setPastTests] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
+  // AI Dynamic Generator State
+  const [isAiGenModalOpen, setIsAiGenModalOpen] = useState(false);
+  const [generatingAiTest, setGeneratingAiTest] = useState(false);
+  const [aiGenForm, setAiGenForm] = useState({
+    companyName: 'Google',
+    roleTitle: 'Software Engineer',
+    category: 'DSA & Problem Solving',
+    difficulty: 'medium',
+    numQuestions: 5,
+  });
+
   useEffect(() => {
     loadTestHistory();
   }, []);
@@ -182,6 +193,50 @@ export default function MockTestsPage() {
       // ignore
     } finally {
       setLoadingHistory(false);
+    }
+  };
+
+  const handleGenerateAiTest = async (e) => {
+    e.preventDefault();
+    setGeneratingAiTest(true);
+    try {
+      const res = await api.generateAiMockTest(
+        aiGenForm.companyName,
+        aiGenForm.roleTitle,
+        aiGenForm.category,
+        aiGenForm.difficulty,
+        Number(aiGenForm.numQuestions) || 5
+      );
+
+      // Convert generated questions into test format
+      const formattedQuestions = (res.questions || []).map((q, idx) => {
+        const correctOpt = q.options?.find((o) => o.id === q.correct_option_id);
+        return {
+          id: idx + 1,
+          question: q.question_text,
+          options: (q.options || []).map((o) => o.text),
+          correct_answer: correctOpt ? correctOpt.text : (q.options?.[0]?.text || ''),
+          explanation: q.explanation,
+          topic: q.category || aiGenForm.category,
+        };
+      });
+
+      const dynamicAssessment = {
+        id: `ai_gen_${Date.now()}`,
+        title: res.title || `${aiGenForm.companyName} Technical Assessment`,
+        category: 'technical',
+        duration_mins: res.duration_minutes || 15,
+        difficulty: aiGenForm.difficulty,
+        questions: formattedQuestions,
+      };
+
+      setIsAiGenModalOpen(false);
+      startAssessment(dynamicAssessment);
+      toast.success(`Generated ${formattedQuestions.length} questions for ${aiGenForm.companyName}!`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to generate AI questions');
+    } finally {
+      setGeneratingAiTest(false);
     }
   };
 
@@ -499,17 +554,144 @@ export default function MockTestsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+                  <button
+                    onClick={() => setIsAiGenModalOpen(true)}
+                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-xs shadow-lg shadow-blue-600/25 flex items-center gap-2 transition transform active:scale-95"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>AI Generate Test</span>
+                  </button>
+
+                  <div className="px-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
                     <div className="text-xl font-extrabold text-slate-900 dark:text-white">{SAMPLE_ASSESSMENTS.length}</div>
                     <div className="text-[10px] text-slate-400 font-bold uppercase">Standard Tests</div>
                   </div>
-                  <div className="px-4 py-2.5 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
+                  <div className="px-4 py-2 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-center">
                     <div className="text-xl font-extrabold text-blue-700 dark:text-blue-300">{pastTests.length}</div>
                     <div className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">Completed</div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Modal: AI Mock Test Generator */}
+            {isAiGenModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+                <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">AI Dynamic Mock Test Generator</h3>
+                        <p className="text-[11px] text-slate-400">Powered by Google Gemini Assessment Engine</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsAiGenModalOpen(false)}
+                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleGenerateAiTest} className="space-y-3.5">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Company</label>
+                        <select
+                          value={aiGenForm.companyName}
+                          onChange={(e) => setAiGenForm({ ...aiGenForm, companyName: e.target.value })}
+                          className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                        >
+                          <option value="Google">Google</option>
+                          <option value="Amazon">Amazon</option>
+                          <option value="Microsoft">Microsoft</option>
+                          <option value="Meta">Meta</option>
+                          <option value="Apple">Apple</option>
+                          <option value="Netflix">Netflix</option>
+                          <option value="Uber">Uber</option>
+                          <option value="Goldman Sachs">Goldman Sachs</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Role</label>
+                        <input
+                          type="text"
+                          required
+                          value={aiGenForm.roleTitle}
+                          onChange={(e) => setAiGenForm({ ...aiGenForm, roleTitle: e.target.value })}
+                          className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Assessment Category</label>
+                        <select
+                          value={aiGenForm.category}
+                          onChange={(e) => setAiGenForm({ ...aiGenForm, category: e.target.value })}
+                          className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                        >
+                          <option value="DSA & Problem Solving">DSA & Problem Solving</option>
+                          <option value="System Design & Cloud Architecture">System Design & Cloud Architecture</option>
+                          <option value="Databases & SQL Mastery">Databases & SQL Mastery</option>
+                          <option value="AI, ML & Deep Learning">AI, ML & Deep Learning</option>
+                          <option value="Quantitative Aptitude">Quantitative Aptitude</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Difficulty Level</label>
+                        <select
+                          value={aiGenForm.difficulty}
+                          onChange={(e) => setAiGenForm({ ...aiGenForm, difficulty: e.target.value })}
+                          className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                        >
+                          <option value="easy">Easy (Entry Foundations)</option>
+                          <option value="medium">Medium (Standard Tier-1)</option>
+                          <option value="hard">Hard (Advanced Competitive)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Number of Questions</label>
+                      <select
+                        value={aiGenForm.numQuestions}
+                        onChange={(e) => setAiGenForm({ ...aiGenForm, numQuestions: Number(e.target.value) })}
+                        className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white"
+                      >
+                        <option value="3">3 Questions (Speed Quiz • 10m)</option>
+                        <option value="5">5 Questions (Standard Diagnostic • 20m)</option>
+                        <option value="8">8 Questions (Full Assessment • 30m)</option>
+                      </select>
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAiGenModalOpen(false)}
+                        className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={generatingAiTest}
+                        className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-blue-600/30 flex items-center gap-1.5"
+                      >
+                        <Sparkles className={`w-3.5 h-3.5 ${generatingAiTest ? 'animate-spin' : ''}`} />
+                        <span>{generatingAiTest ? 'Generating Live Questions...' : 'Start AI Test Now'}</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
 
             {/* Assessment Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -18,6 +18,7 @@ from app.api.v1.endpoints import (
     skills,
     students,
     users,
+    ai_agent,
 )
 
 api_router = APIRouter()
@@ -37,3 +38,5 @@ api_router.include_router(resumes.router, prefix="/resumes", tags=["Resumes & Ta
 api_router.include_router(performance.router, prefix="/performance", tags=["Performance & Fit Records"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(audit.router, prefix="/audit", tags=["Security & Audit Logs"])
+api_router.include_router(ai_agent.router, prefix="/ai", tags=["Google Gemini AI Agent & Copilot"])
+

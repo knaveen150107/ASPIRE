@@ -287,12 +287,33 @@ export default function SkillGapsPage({ onNavigate }) {
                 </p>
               </div>
 
-              <button
-                onClick={() => onNavigate('roadmaps')}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition whitespace-nowrap"
-              >
-                View Roadmaps <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={async () => {
+                    try {
+                      toast.info(`Generating targeted remedial roadmap for ${selectedRole.title}...`);
+                      const res = await api.generateAiRoadmap({
+                        target_role: selectedRole.title,
+                        current_skills: studentSkills.map(s => s.name || s.skill_id),
+                        timeframe_weeks: 8
+                      });
+                      toast.success(`AI Roadmap "${res.title || selectedRole.title}" generated!`);
+                      if (onNavigate) onNavigate('roadmaps');
+                    } catch (e) {
+                      toast.error(e.message || 'Failed to generate remedial roadmap');
+                    }
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition whitespace-nowrap"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" /> Generate AI Remedial Path
+                </button>
+                <button
+                  onClick={() => onNavigate && onNavigate('roadmaps')}
+                  className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-xs flex items-center gap-1.5 transition whitespace-nowrap"
+                >
+                  View Roadmaps <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
