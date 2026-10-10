@@ -34,3 +34,12 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class CreateRecruiterRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    password: str = Field(min_length=6, max_length=100)
+    company_name: Optional[str] = "TechCorp Solutions"
+    designation: Optional[str] = "Talent Acquisition Lead"
+
