@@ -32,6 +32,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("MongoDB connection pool closed.")
 
 
+TAGS_METADATA = [
+    {"name": "System Health", "description": "Core cluster liveness and service health monitoring."},
+    {"name": "Auth", "description": "User registration, authentication, JWT tokens, and identity management."},
+    {"name": "Users", "description": "Administrative user management and recruiter account provisioning."},
+    {"name": "Students", "description": "Student academic records, verified competencies, and skills."},
+    {"name": "Jobs", "description": "Campus placement drives, eligibility evaluations, and applications."},
+    {"name": "Assessments", "description": "Diagnostic test scoring and adaptive mock assessments."},
+    {"name": "Roadmaps", "description": "Personalized learning curricula and milestones."},
+    {"name": "Resumes", "description": "ATS resume builder and version management."},
+]
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
@@ -41,6 +52,7 @@ app = FastAPI(
         "AI mock tests, skill-gap analysis, personalized learning roadmaps, and resume versioning."
     ),
     lifespan=lifespan,
+    openapi_tags=TAGS_METADATA,
     docs_url="/docs",
     redoc_url="/redoc",
 )
