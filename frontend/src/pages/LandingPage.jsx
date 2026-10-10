@@ -327,9 +327,8 @@ export const LandingPage = ({ onNavigate, onOpenAuth }) => {
             </div>
 
             {/* Amazon */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hover:scale-105 cursor-default group">
-              <AmazonLogo className="h-6 w-6" />
-              <span className="text-lg font-black text-slate-800 dark:text-slate-200 tracking-tight lowercase">amazon</span>
+            <div className="flex items-center px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hover:scale-105 cursor-default group">
+              <AmazonLogo className="h-6 w-auto" />
             </div>
 
             {/* Meta */}
