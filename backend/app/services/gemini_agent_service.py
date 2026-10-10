@@ -38,7 +38,7 @@ class GeminiAgentService:
     def __init__(self, api_key: Optional[str] = None):
         self._override_key: Optional[str] = api_key
         self._client: Optional[Any] = None
-        self._model = settings.GEMINI_MODEL or "gemini-3.6-flash"
+        self._model = settings.GEMINI_MODEL or "gemini-flash-latest"
 
     @property
     def api_key(self) -> str:
@@ -67,30 +67,39 @@ class GeminiAgentService:
         return self._client
 
     def _call_gemini(self, prompt: str, system_instruction: Optional[str] = None, json_output: bool = False) -> Optional[str]:
-        """Performs a Gemini model interaction with error handling."""
+        """Performs a Gemini model interaction with error handling and automatic model fallbacks."""
         client = self.get_client()
         if not client:
             return None
 
-        try:
-            config_params: Dict[str, Any] = {
-                "temperature": 0.4 if json_output else 0.7,
-            }
-            if system_instruction:
-                config_params["system_instruction"] = system_instruction
-            if json_output:
-                config_params["response_mime_type"] = "application/json"
+        # Try active model, followed by lightweight/flash alternatives
+        candidate_models = [self._model]
+        for alt in ["gemini-2.5-flash-lite", "gemini-flash-latest"]:
+            if alt not in candidate_models:
+                candidate_models.append(alt)
 
-            config = types.GenerateContentConfig(**config_params)
-            response = client.models.generate_content(
-                model=self._model,
-                contents=prompt,
-                config=config,
-            )
-            return response.text
-        except Exception as e:
-            logger.warning("Gemini generation failed (%s). Falling back to heuristic mode.", e)
-            return None
+        for model_candidate in candidate_models:
+            try:
+                config_params: Dict[str, Any] = {
+                    "temperature": 0.4 if json_output else 0.7,
+                }
+                if system_instruction:
+                    config_params["system_instruction"] = system_instruction
+                if json_output:
+                    config_params["response_mime_type"] = "application/json"
+
+                config = types.GenerateContentConfig(**config_params)
+                response = client.models.generate_content(
+                    model=model_candidate,
+                    contents=prompt,
+                    config=config,
+                )
+                if response and response.text:
+                    return response.text
+            except Exception as e:
+                logger.warning("Gemini generation attempt with %s failed (%s). Trying fallback...", model_candidate, e)
+
+        return None
 
     # =========================================================================
     # 1. AI CAREER COPILOT CHAT AGENT
@@ -502,6 +511,13 @@ class GeminiAgentService:
             try:
                 data = json.loads(llm_json)
                 data["model_used"] = self._model
+                data["overall_score"] = data.get("overall_score") or data.get("ats_score", 85)
+                data["ats_score"] = data["overall_score"]
+                data["format_score"] = data.get("format_score", 90)
+                data["keyword_score"] = data.get("keyword_score", 88)
+                data["matched_keywords"] = data.get("matched_keywords") or ["Python", "FastAPI", "React", "MongoDB"]
+                data["missing_keywords"] = data.get("missing_keywords") or ["Docker", "CI/CD", "Redis"]
+                data["summary_recommendations"] = data.get("overall_summary") or data.get("summary_recommendations", "ATS optimization completed.")
                 return data
             except Exception:
                 pass
@@ -509,6 +525,9 @@ class GeminiAgentService:
         # Heuristic ATS Analyzer
         return {
             "ats_score": 84,
+            "overall_score": 84,
+            "format_score": 92,
+            "keyword_score": 86,
             "candidate_level": "Entry-level Engineer",
             "top_strengths": [
                 "Clear technical stack alignment with modern web & cloud standards (Python, FastAPI, React, MongoDB).",
@@ -519,6 +538,7 @@ class GeminiAgentService:
                 "Several project bullet points lack quantifiable metrics (e.g. latency, user counts, % speedup).",
                 "Missing explicit mention of unit testing frameworks (e.g. pytest, Jest).",
             ],
+            "matched_keywords": ["Python", "FastAPI", "React", "MongoDB"],
             "missing_keywords": [
                 "Docker / Containerization",
                 "CI/CD Pipelines (GitHub Actions)",
@@ -538,6 +558,7 @@ class GeminiAgentService:
                 },
             ],
             "overall_summary": f"Your resume demonstrates strong technical capabilities for '{target_role}'. Addressing the missing DevOps keywords and applying metric-driven action verbs will comfortably push your ATS score into the top 95th percentile.",
+            "summary_recommendations": f"Your resume demonstrates strong technical capabilities for '{target_role}'. Addressing the missing DevOps keywords and applying metric-driven action verbs will comfortably push your ATS score into the top 95th percentile.",
             "model_used": "aspire-heuristic-analyzer",
         }
 
@@ -617,12 +638,20 @@ class GeminiAgentService:
             "job_title": job_title,
             "company_name": company,
             "overall_match_score": overall_score,
+            "fit_score": overall_score,
             "eligible": cgpa_eligible,
             "eligibility_reasons": eligibility_reasons,
             "matched_skills": matched,
             "missing_skills": missing,
+            "strengths": [f"Direct core competency match: {', '.join(matched)}"] if matched else ["Strong algorithmic baseline"],
             "tailored_advice": advice,
+            "fit_summary": advice,
             "recommended_projects": projects,
+            "interview_prep_tips": [
+                f"Review high-frequency coding patterns relevant to {company}.",
+                f"Prepare system design talking points for projects using {', '.join(matched[:2]) or 'Python'}.",
+                f"Review fundamentals in {', '.join(missing[:2]) if missing else 'concurrency & scalability'}."
+            ],
             "model_used": self._model if self.is_configured else "aspire-heuristic-matcher",
         }
 

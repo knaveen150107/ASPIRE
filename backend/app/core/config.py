@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Google Gemini AI Agent Config
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
     # CORS Allowed Origins
     CORS_ORIGINS: List[str] = [
