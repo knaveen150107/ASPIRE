@@ -71,10 +71,22 @@ def initialize_database() -> None:
     for col_name, validator in COLLECTION_VALIDATORS.items():
         try:
             if col_name in existing_collections:
-                # Update validator safely on existing collection without touching documents
-                db.command("collMod", col_name, validator=validator, validationLevel="strict", validationAction="error")
-                results_collections.append((col_name, "MODIFIED (Validator synced)"))
-                print(f"  • {col_name:<22} : Validator updated successfully.")
+                # Attempt to update validator safely on existing collection
+                try:
+                    db.command(
+                        "collMod",
+                        col_name,
+                        validator=validator,
+                        validationLevel="strict",
+                        validationAction="error",
+                    )
+                    results_collections.append((col_name, "EXISTING (Validator synced)"))
+                    print(f"  • {col_name:<22} : Validator updated successfully.")
+                except PyMongoError as coll_err:
+                    results_collections.append((col_name, "EXISTING (Retained)"))
+                    print(
+                        f"  • {col_name:<22} : Existing collection retained (collMod notice: {coll_err.args[0] if coll_err.args else 'permission restricted'})."
+                    )
             else:
                 # Create brand new empty collection with strict JSON Schema validator
                 db.create_collection(
@@ -83,7 +95,7 @@ def initialize_database() -> None:
                     validationLevel="strict",
                     validationAction="error",
                 )
-                results_collections.append((col_name, "CREATED (Empty collection + Validator)"))
+                results_collections.append((col_name, "CREATED (Empty collection + Schema)"))
                 print(f"  • {col_name:<22} : Created empty collection with schema.")
         except PyMongoError as err:
             print(f"\n[ERROR] Failed configuring collection '{col_name}': {err}")
