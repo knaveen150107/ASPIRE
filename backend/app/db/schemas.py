@@ -141,7 +141,25 @@ class StudentProfileDocument(MongoBaseModel):
     degree: str
     graduation_year: int
     cgpa: float = Field(ge=0.0, le=10.0)
+    phone: Optional[str] = None
+    college: Optional[str] = "Amrita Vishwa Vidyapeetham"
+    current_year: Optional[int] = 3
+    current_semester: Optional[int] = 6
+    active_backlogs: Optional[int] = 0
+    profession: Optional[str] = "Full Stack Software Engineer"
+    headline: Optional[str] = None
+    location: Optional[str] = None
     profile_summary: Optional[str] = None
+    avatar_url: Optional[str] = None
+    resume_url: Optional[str] = None
+    resume_filename: Optional[str] = None
+    resume_updated_at: Optional[datetime] = None
+    social_links: Optional[Dict[str, Any]] = None
+    projects: List[Dict[str, Any]] = Field(default_factory=list)
+    education: List[Dict[str, Any]] = Field(default_factory=list)
+    experience: List[Dict[str, Any]] = Field(default_factory=list)
+    certifications: List[Dict[str, Any]] = Field(default_factory=list)
+    achievements: List[Dict[str, Any]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 

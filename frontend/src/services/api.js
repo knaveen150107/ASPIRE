@@ -90,6 +90,33 @@ class ApiClient {
     return res.data;
   }
 
+  async uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await this.request('/students/me/avatar', {
+      method: 'POST',
+      body: formData,
+    });
+    return res.data;
+  }
+
+  async removeAvatar() {
+    const res = await this.request('/students/me/avatar', {
+      method: 'DELETE',
+    });
+    return res.data;
+  }
+
+  async uploadResumeFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await this.request('/students/me/resume/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    return res.data;
+  }
+
   async getStudentSkills() {
     const res = await this.request('/students/me/skills');
     return res.data || [];

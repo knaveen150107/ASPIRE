@@ -1,0 +1,52 @@
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/?retryWrites=true&w=majority}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-aspire_db}
+      SECRET_KEY: ${SECRET_KEY:?Copy .env.example to .env and set SECRET_KEY}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - uploads-data:/app/uploads
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/', timeout=2)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+
+volumes:
+  mongo-data:
+  uploads-data:

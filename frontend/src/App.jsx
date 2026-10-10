@@ -15,11 +15,16 @@ import SkillGapsPage from './pages/SkillGapsPage';
 import RoadmapsPage from './pages/RoadmapsPage';
 import ResumesPage from './pages/ResumesPage';
 import RecruiterDashboard from './pages/RecruiterDashboard';
+import ProfilePage from './pages/ProfilePage';
 
 function MainApp() {
   const { user, isAuthenticated, role, loading } = useAuth();
   const toast = useToast();
   const [currentView, setCurrentView] = useState(() => {
+    const path = window.location.pathname.replace(/^\//, '');
+    if (['profile', 'jobs', 'mock-tests', 'skill-gaps', 'roadmaps', 'resumes', 'admin', 'recruiter', 'dashboard'].includes(path)) {
+      return path;
+    }
     return localStorage.getItem('aspire_token') ? 'dashboard' : 'landing';
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -32,8 +37,26 @@ function MainApp() {
 
   const handleNavigate = (view) => {
     setCurrentView(view);
+    const newPath = view === 'landing' ? '/' : `/${view}`;
+    if (window.location.pathname !== newPath) {
+      window.history.pushState({}, '', newPath);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Browser back/forward navigation support
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\//, '');
+      if (path && ['profile', 'jobs', 'mock-tests', 'skill-gaps', 'roadmaps', 'resumes', 'admin', 'recruiter', 'dashboard', 'landing'].includes(path)) {
+        setCurrentView(path);
+      } else if (!path) {
+        setCurrentView(localStorage.getItem('aspire_token') ? 'dashboard' : 'landing');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Redirect to appropriate role dashboard after initial login
   useEffect(() => {
@@ -98,13 +121,15 @@ function MainApp() {
       );
     }
 
-    // 5. Student Protected Tools (Mock Tests, Skill Gaps, Roadmaps, Resumes)
-    if (['mock-tests', 'skill-gaps', 'roadmaps', 'resumes'].includes(currentView)) {
+    // 5. Student Protected Tools (Profile, Mock Tests, Skill Gaps, Roadmaps, Resumes)
+    if (['profile', 'mock-tests', 'skill-gaps', 'roadmaps', 'resumes'].includes(currentView)) {
       if (!isAuthenticated) {
         return <ProtectedView requiredRole="authenticated" onOpenAuth={openAuthModal} onNavigate={handleNavigate} />;
       }
 
       switch (currentView) {
+        case 'profile':
+          return <ProfilePage onNavigate={handleNavigate} />;
         case 'mock-tests':
           return <MockTestsPage onNavigate={handleNavigate} />;
         case 'skill-gaps':

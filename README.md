@@ -5,6 +5,24 @@
 
 ASPIRE is an intelligent, AI-powered career and placement preparation platform designed to bridge the gap between students and employment opportunities. It helps students discover relevant jobs, understand company requirements, practise role-specific assessments, identify missing skills, and build tailored resumes through a unified, personalized career development experience.
 
+## Run with Docker
+
+Install Docker Desktop, then from the repository root create your environment file and set a private JWT secret:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Edit `.env` and replace `SECRET_KEY` with a long, random value. Start the application:
+
+```powershell
+docker compose up --build
+```
+
+Open [http://localhost:8080](http://localhost:8080). The API is available at [http://localhost:8000](http://localhost:8000), with interactive documentation at [http://localhost:8000/docs](http://localhost:8000/docs). Compose starts MongoDB locally and keeps its data in the `mongo-data` volume, and persists uploaded profile avatars and resume documents in the `uploads-data` volume. Set `MONGODB_URI` in `.env` if you want to use a MongoDB Atlas cluster instead.
+
+Stop the containers with `Ctrl+C`, or run `docker compose down`. To also delete persisted storage (database & uploads), run `docker compose down --volumes`.
+
 Our vision is simple: **Every student deserves a clear path toward career growth, even when they are not eligible for every campus placement opportunity.**
 
 ---

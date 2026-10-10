@@ -83,7 +83,7 @@ export const Navbar = ({ currentView, onNavigate, onOpenAuth }) => {
   // Home, Profile, Jobs, Mock Test, Resume Checker, Skill Gap
   const studentNavItems = [
     { id: 'dashboard', label: 'Home' },
-    { id: 'dashboard', label: 'Profile', isProfileScroll: true },
+    { id: 'profile', label: 'Profile' },
     { id: 'jobs', label: 'Jobs' },
     { id: 'mock-tests', label: 'Mock Test' },
     { id: 'resumes', label: 'Resume Checker' },
@@ -98,18 +98,12 @@ export const Navbar = ({ currentView, onNavigate, onOpenAuth }) => {
   }
 
   const handleItemClick = (item) => {
-    if (item.isProfileScroll) {
-      onNavigate('dashboard');
-      setTimeout(() => {
-        window.scrollTo({ top: 350, behavior: 'smooth' });
-      }, 100);
-    } else {
-      onNavigate(item.id);
-    }
+    onNavigate(item.id);
   };
 
   const isCurrentActive = (item) => {
     if (item.label === 'Home' && currentView === 'dashboard') return true;
+    if (item.label === 'Profile' && currentView === 'profile') return true;
     if (item.label === 'Jobs' && currentView === 'jobs') return true;
     if (item.label === 'Mock Test' && currentView === 'mock-tests') return true;
     if (item.label === 'Resume Checker' && currentView === 'resumes') return true;
@@ -217,6 +211,18 @@ export const Navbar = ({ currentView, onNavigate, onOpenAuth }) => {
                       {/* Dropdown Action Links */}
                       <div className="py-1 space-y-0.5">
                         
+                        {/* My Profile */}
+                        <button
+                          onClick={() => {
+                            onNavigate('profile');
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 text-slate-800 hover:bg-blue-50 hover:text-blue-600 rounded-xl flex items-center gap-2.5 font-bold transition"
+                        >
+                          <User className="w-4 h-4 text-blue-600" />
+                          <span>My Profile</span>
+                        </button>
+
                         {/* Settings */}
                         <button
                           onClick={() => {

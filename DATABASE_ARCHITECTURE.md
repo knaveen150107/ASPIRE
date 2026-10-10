@@ -93,16 +93,32 @@ Central identity collection for authentication and core role management.
   - `idx_users_role_active` (`role: 1, is_active: 1`)
 
 #### 2. `student_profiles`
-Academic records and profile details for student users.
+Academic records, personal information, skills, projects, and career documents for student users.
 - **Fields:**
   - `_id` (`ObjectId`): Profile identifier.
   - `user_id` (`ObjectId`): Reference to `users._id`.
-  - `register_number` (`string`): Unique institutional registration number.
+  - `register_number` (`string`): Unique institutional registration number / roll number.
   - `department` (`string`): Academic department (e.g. `Computer Science and Engineering`).
   - `degree` (`string`): Degree title (e.g. `B.Tech`, `M.Tech`).
   - `graduation_year` (`int`): Passing out year ($1990 \le year \le 2100$).
   - `cgpa` (`double`/`int`): Cumulative GPA on a 10-point scale ($0.0 \le CGPA \le 10.0$).
   - `profile_summary` (`string`, optional): Student biography or personal statement.
+  - `avatar_url` (`string`, optional): Profile photo URL (served via `/api/v1/students/avatar/{filename}`).
+  - `phone_number` (`string`, optional): Contact telephone number.
+  - `college` (`string`, optional): University or college name.
+  - `current_year` (`int`, optional): Current academic year ($1 \le year \le 6$).
+  - `current_semester` (`int`, optional): Current academic semester ($1 \le sem \le 12$).
+  - `backlogs` (`int`, optional): Active backlog count ($\ge 0$).
+  - `location` (`string`, optional): Current city / state / region.
+  - `headline` (`string`, optional): Professional headline / career tagline.
+  - `bio` (`string`, optional): Comprehensive personal bio / career objective.
+  - `social_links` (`object`, optional): Nested object with `github`, `linkedin`, `leetcode`, `instagram`, `portfolio`.
+  - `projects` (`array` of `object`, optional): Student projects with title, description, tech stack, role, URLs, and dates.
+  - `education` (`array` of `object`, optional): Institution timeline entries with degree, field, score, and dates.
+  - `experience` (`array` of `object`, optional): Internships and work history with company, role, description, and dates.
+  - `certifications` (`array` of `object`, optional): Professional certificates with issuer, issue date, and credential URL/ID.
+  - `achievements` (`array` of `object`, optional): Awards, honors, hackathons, and extracurricular leadership achievements.
+  - `resume_metadata` (`object`, optional): Current uploaded resume metadata (`filename`, `file_url`, `file_type`, `uploaded_at`).
   - `created_at` (`date`): Timestamp.
   - `updated_at` (`date`): Timestamp.
 - **Indexes:**

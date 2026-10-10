@@ -74,17 +74,6 @@ export default function StudentDashboard({ onNavigate }) {
   const [skillSearchQuery, setSkillSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All');
 
-  // Edit profile state
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [editCgpa, setEditCgpa] = useState('');
-  const [editBacklogs, setEditBacklogs] = useState(0);
-  const [editDegree, setEditDegree] = useState('B.Tech');
-  const [editDepartment, setEditDepartment] = useState('Computer Science');
-  const [editBatch, setEditBatch] = useState(2026);
-  const [editProfession, setEditProfession] = useState('Full Stack Software Engineer');
-  const [editRegisterNo, setEditRegisterNo] = useState('CB.SC.U4AIE24235');
-  const [editSummary, setEditSummary] = useState('');
-
   const loadDashboardData = async () => {
     try {
       setLoading(true);
@@ -97,16 +86,7 @@ export default function StudentDashboard({ onNavigate }) {
       ]);
 
       if (profileData.status === 'fulfilled' && profileData.value) {
-        const val = profileData.value;
-        setProfile(val);
-        setEditCgpa(val.cgpa ?? val.academic_record?.cgpa ?? 8.2);
-        setEditBacklogs(val.active_backlogs ?? val.academic_record?.active_backlogs ?? 0);
-        setEditDegree(val.degree || val.academic_record?.degree || 'B.Tech');
-        setEditDepartment(val.department || val.academic_record?.department || 'Computer Science');
-        setEditBatch(val.graduation_year || val.academic_record?.graduation_year || 2026);
-        setEditProfession(val.profession || val.academic_record?.profession || 'Full Stack Software Engineer');
-        setEditRegisterNo(val.register_number || 'CB.SC.U4AIE24235');
-        setEditSummary(val.profile_summary || '');
+        setProfile(profileData.value);
       }
 
       if (skillsData.status === 'fulfilled') setSkills(skillsData.value || []);
@@ -276,45 +256,6 @@ export default function StudentDashboard({ onNavigate }) {
     setSelectedRAGSkills(updated);
   };
 
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    try {
-      const parsedCgpa = parseFloat(editCgpa);
-      const parsedBacklogs = parseInt(editBacklogs, 10) || 0;
-      const parsedBatch = parseInt(editBatch, 10) || 2026;
-
-      const payload = {
-        degree: editDegree,
-        department: editDepartment,
-        graduation_year: parsedBatch,
-        cgpa: parsedCgpa,
-        active_backlogs: parsedBacklogs,
-        profession: editProfession.trim() || 'Full Stack Software Engineer',
-        register_number: editRegisterNo.trim() || 'CB.SC.U4AIE24235',
-        profile_summary: editSummary.trim(),
-        academic_record: {
-          degree: editDegree,
-          department: editDepartment,
-          graduation_year: parsedBatch,
-          cgpa: parsedCgpa,
-          active_backlogs: parsedBacklogs,
-          profession: editProfession.trim() || 'Full Stack Software Engineer',
-          register_number: editRegisterNo.trim() || 'CB.SC.U4AIE24235',
-          profile_summary: editSummary.trim(),
-        }
-      };
-
-      const res = await api.updateStudentProfile(payload);
-      if (res) {
-        setProfile((prev) => ({ ...prev, ...res }));
-      }
-      toast.success('Academic & Career profile updated successfully!');
-      setIsEditProfileOpen(false);
-      await loadDashboardData();
-    } catch (err) {
-      toast.error(err.message || 'Failed to update academic profile');
-    }
-  };
 
   // Filter skills for display in the Arsenal card
   const filteredSkills = skills.filter((s) => {
@@ -811,10 +752,10 @@ export default function StudentDashboard({ onNavigate }) {
                   Academic Profile
                 </h3>
                 <button
-                  onClick={() => setIsEditProfileOpen(true)}
+                  onClick={() => onNavigate('profile')}
                   className="text-xs text-blue-600 hover:text-blue-700 font-bold hover:underline"
                 >
-                  Edit
+                  Manage
                 </button>
               </div>
               
@@ -854,11 +795,11 @@ export default function StudentDashboard({ onNavigate }) {
               </div>
 
               <button
-                onClick={() => setIsEditProfileOpen(true)}
-                className="w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition flex items-center justify-center gap-1.5"
+                onClick={() => onNavigate('profile')}
+                className="w-full py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200/80 transition flex items-center justify-center gap-1.5 shadow-xs"
               >
-                <User className="w-3.5 h-3.5 text-slate-500" />
-                Edit Profile & Academic Records
+                <User className="w-3.5 h-3.5 text-blue-600" />
+                Manage Full Profile & Records
               </button>
             </div>
 
@@ -1235,176 +1176,6 @@ export default function StudentDashboard({ onNavigate }) {
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm disabled:opacity-50"
                 >
                   {isSubmittingSkill ? 'Saving...' : 'Add Skill'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Profile Modal */}
-      {isEditProfileOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
-            <div className="flex items-start justify-between border-b border-slate-100 pb-3.5">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <User className="w-5 h-5 text-blue-600" />
-                  Edit Student Profile & Credentials
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Update your academic standing, target profession, and verification details.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsEditProfileOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              
-              {/* Target Profession & Roll Number */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Target Profession / Role
-                  </label>
-                  <input
-                    type="text"
-                    value={editProfession}
-                    onChange={(e) => setEditProfession(e.target.value)}
-                    placeholder="e.g. Full Stack Developer, AI/ML Engineer"
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Registration / Roll Number
-                  </label>
-                  <input
-                    type="text"
-                    value={editRegisterNo}
-                    onChange={(e) => setEditRegisterNo(e.target.value)}
-                    placeholder="e.g. CB.SC.U4AIE24235"
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs font-mono focus:outline-none focus:border-blue-600 focus:bg-white transition"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Department & Degree */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-                  <select
-                    value={editDepartment}
-                    onChange={(e) => setEditDepartment(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
-                  >
-                    <option value="Computer Science">Computer Science & Engineering</option>
-                    <option value="Artificial Intelligence & DS">Artificial Intelligence & Data Science</option>
-                    <option value="Information Technology">Information Technology</option>
-                    <option value="Electronics & Communication">Electronics & Communication</option>
-                    <option value="Electrical Engineering">Electrical & Electronics</option>
-                    <option value="Mechanical Engineering">Mechanical Engineering</option>
-                    <option value="Civil Engineering">Civil Engineering</option>
-                    <option value="Data Science">Data Science</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Degree</label>
-                  <select
-                    value={editDegree}
-                    onChange={(e) => setEditDegree(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
-                  >
-                    <option value="B.Tech">B.Tech (Bachelor of Technology)</option>
-                    <option value="B.E.">B.E. (Bachelor of Engineering)</option>
-                    <option value="M.Tech">M.Tech (Master of Technology)</option>
-                    <option value="MCA">MCA (Master of Computer Apps)</option>
-                    <option value="B.Sc">B.Sc Computer Science</option>
-                    <option value="M.Sc">M.Sc Data Analytics</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Batch Year, CGPA, Arrears / Backlogs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Graduation Year</label>
-                  <input
-                    type="number"
-                    min="2020"
-                    max="2035"
-                    value={editBatch}
-                    onChange={(e) => setEditBatch(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Cumulative GPA (0-10)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="10"
-                    value={editCgpa}
-                    onChange={(e) => setEditCgpa(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Arrears / Backlogs</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="20"
-                    value={editBacklogs}
-                    onChange={(e) => setEditBacklogs(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Career Summary / Bio */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Career Bio & Placement Summary
-                </label>
-                <textarea
-                  rows="2"
-                  value={editSummary}
-                  onChange={(e) => setEditSummary(e.target.value)}
-                  placeholder="e.g. Passionate full-stack developer with strong foundation in DSA, Python, and cloud architectures..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white transition resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsEditProfileOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 text-xs font-bold transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition hover:shadow-lg"
-                >
-                  Save Profile Details
                 </button>
               </div>
             </form>
